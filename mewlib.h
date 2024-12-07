@@ -27,7 +27,7 @@
 	#define __CXX20
 #endif
 
-#ifdef MEW_USE_THROWS && defined(__cplusplus)
+#if defined(__cplusplus) && defined(MEW_USE_THROWS) 
 #undef MEW_USE_THROWS
 #endif 
 
