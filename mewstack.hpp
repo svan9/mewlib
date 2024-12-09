@@ -7,18 +7,9 @@
 #ifndef MEW_STACK_LIB_SO2U
 #define MEW_STACK_LIB_SO2U
 #include "mewlib.h"
+#include "mewmath.hpp"
 
 namespace mew {
-  
-int mod(int a, int b) {
-  if(b < 0) 
-    return -mod(-a, -b);
-  int ret = a % b;
-  if(ret < 0)
-    ret+=b;
-  return ret;
-}
-
 
 template<typename T>
 class stack {
@@ -28,7 +19,7 @@ private:
 public:
   ////////////////////////////////////////////////////////////
   stack(): _M_capacity(sizeof(T)), _M_size(0) {
-    data = realloc(nullptr, _M_capacity);
+    data = (T*)malloc(_M_capacity);
   }
 
   ////////////////////////////////////////////////////////////
@@ -41,14 +32,14 @@ public:
     data = (T*)realloc(data, new_size);
     if (_M_size > new_size) {
       _M_size = new_size;
-    } 
+    }
     _M_capacity = new_size;
   }
 
   ////////////////////////////////////////////////////////////
   void upsize_if_needs() {
-    if (_M_size*sizeof(T) > _M_capacity) {
-      resize(_M_size*sizeof(T));
+    if ((_M_size+1)*sizeof(T) > _M_capacity) {
+      resize((_M_size+1)*sizeof(T));
     }
   }
 
@@ -126,7 +117,6 @@ public:
     T* end = (T*)(data+start+size);
     memmove(begin, end, size*sizeof(T));
     _M_size -= size;
-    ____MEWMEW____
   }
   
   ////////////////////////////////////////////////////////////

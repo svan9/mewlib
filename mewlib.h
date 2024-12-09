@@ -42,6 +42,10 @@
 #ifdef RELEASE
 	#define __mewassert(strexpr, message, file, line, func) NULLVAL
 	#define __mewassert_nm(strexpr, file, line, func) NULLVAL
+	#define __mewassert_nm_t_bad(func, val, correct) NULLVAL
+	#define __mewassert_nm_t_good(func, val, correct) NULLVAL
+	#define __mewassert_r(strexpr, message, file, line, func) NULLVAL
+	#define __mewassert_nm_r(strexpr, file, line, func) NULLVAL
 #else
 	#define __mewassert(strexpr, message, file, line, func) \
 		printf("\nAssert failed at %s:%i, %s(...)\n  With expression (%s)\n  `%s`", file, line, func, strexpr, message);
@@ -51,7 +55,17 @@
 		"\nAssert failed at %s:%i, %s(...)\n  With expression (%s)\n  `%s`", file, line, func, strexpr, message
 	#define __mewassert_nm_r(strexpr, file, line, func) \
 		"\nAssert failed at %s:%i, %s(...)\n  With expression (%s)\n", file, line, func, strexpr
+	#define __mewassert_nm_t_bad(func, val, correct) \
+		printf("🔴 \033[31mTest failed %s(%i != %i) \033[0m\n", func, val, correct);
+	#define __mewassert_nm_t_good(func, val, correct) \
+		printf("🟢 \033[92mTest success %s(%i == %i)\033[0m\n", func, val, correct);
+
 #endif
+
+#define MewTest(value, correct) \
+		if (!(value == correct)) { __mewassert_nm_t_bad(__func__, value, correct); }\
+		else { __mewassert_nm_t_good(__func__, value, correct); }
+
 
 #if defined(MEW_USE_THROWS) && __cplusplus
 	#define MewUserAssert(expr, message) \
@@ -105,18 +119,14 @@
 	#include <string.h>
 	#include <string>
 	#include <wchar.h>
+#ifdef __CXX20
 	#include <concepts>
+#endif
 
-char *ansi(wchar_t *unicode) {
-	size_t size = wcslen(unicode);
-	char* buffer = new char[size+1]; 
-	for (int i = 0; i < size; i++) {
-		buffer[i] = wctob(unicode[i]);
-	}
-	buffer[size] = '\0';
-	return buffer;
-}
-
+typedef char* data_t;
+typedef unsigned char byte;
+typedef unsigned int uint;
+#ifdef __cplusplus
 namespace mew {
 #ifdef __CXX20
 	template<typename>
@@ -158,246 +168,10 @@ namespace mew {
 	template<typename VF, typename VS>
 	concept same_as = std::same_as<ClearType<VF>, ClearType<VS>>;
 
+#endif	
+}
+
 #endif
-	class Error: public std::exception {
-	private:
-		std::string msg;
-	public:
-		Error() {
-			
-		}
-
-    const char* what() const throw() {
-			return msg.c_str();
-    }
-	};
-
-namespace string {
-	class StringIterator {
-	public:
-		const char *cbegin, *begin, *end;
-		typedef StringIterator iterator;
-		typedef const StringIterator const_iterator;
-
-		////////////////////////////////////////////////////////////
-		StringIterator() {}
-
-		////////////////////////////////////////////////////////////
-		StringIterator(const char* source): cbegin(source), begin(source), end(source+strlen(source)) {}
-
-		////////////////////////////////////////////////////////////
-		iterator Begin() {
-			return iterator(*this);
-		}
-
-		////////////////////////////////////////////////////////////
-		iterator End() {
-			return iterator(*this)+(end-begin);
-		}
-		
-		////////////////////////////////////////////////////////////
-		bool IncCheck(int v = 1) {
-			return begin+v == end;
-		}
-				
-		////////////////////////////////////////////////////////////
-		bool DecCheck(int v = 1) {
-			return begin-v == cbegin;
-		}
-
-		////////////////////////////////////////////////////////////
-		iterator& operator++() {
-			if (IncCheck()) { begin++; }
-			return *this;
-		}
-		
-		////////////////////////////////////////////////////////////
-		iterator operator++(int) {
-			iterator tmp(*this);
-			operator++();
-			return tmp;
-		}
-		
-		////////////////////////////////////////////////////////////
-		iterator& operator--() {
-			if (DecCheck()) { begin--; }
-			return *this;
-		}
-
-		////////////////////////////////////////////////////////////
-		iterator operator--(int) {
-			iterator tmp(*this);
-			operator--();
-			return tmp;
-		}  
-
-		////////////////////////////////////////////////////////////
-		iterator& operator+=(const int v) noexcept {
-			if (IncCheck(v)) { begin += v; }
-			return *this;
-		}
-
-		///////////////////////////////////////////////////////////.
-		iterator operator+(const int _Off) const noexcept {
-			iterator _Tmp = *this;
-			_Tmp += _Off;
-			return _Tmp;
-		}
-
-		////////////////////////////////////////////////////////////
-		friend iterator operator+(const int _Off, iterator _Next) noexcept {
-			_Next += _Off;
-			return _Next;
-		}
-
-		////////////////////////////////////////////////////////////
-		iterator& operator-=(const int v) noexcept {
-			if (DecCheck(v)) { begin += v; }
-			return *this;
-		}
-
-		////////////////////////////////////////////////////////////
-		iterator operator-(const int _Off) const noexcept {
-			iterator _Tmp = *this;
-			_Tmp -= _Off;
-			return _Tmp;
-		}
-
-		////////////////////////////////////////////////////////////
-		friend iterator operator-(const int _Off, iterator _Next) noexcept {
-			_Next -= _Off;
-			return _Next;
-		}
-
-		////////////////////////////////////////////////////////////
-		friend bool operator==(const iterator& l, const iterator& r) noexcept {
-			return l.end == r.end && l.begin == r.begin;
-		}
-
-		////////////////////////////////////////////////////////////
-		friend bool operator!=(const iterator& l, const iterator& r) noexcept {
-			return l.end != r.end || l.begin != r.begin;
-		}
-
-		////////////////////////////////////////////////////////////
-		bool IsEnd() {
-			return begin == end;	
-		}
-
-		////////////////////////////////////////////////////////////
-		char operator*() {
-			return *begin;
-		}
-
-		////////////////////////////////////////////////////////////
-		static char BeginChar(const char* source) {
-			return *(source);
-		}
-
-		////////////////////////////////////////////////////////////
-		static char EndChar(const char* source) {
-			return *(strlen(source)+source-1);
-		}
-
-		////////////////////////////////////////////////////////////
-		static bool HasChar(const char* source, char c) {
-			for (int i = 0; i < strlen(source); i++) {
-				if (source[i] == c) {
-					return true;
-				}
-			}
-			return false;
-		}
-
-		////////////////////////////////////////////////////////////
-		static bool HasCharNoCase(const char* source, char c) {
-			for (int i = 0; i < strlen(source); i++) {
-				if (tolower(source[i]) == tolower(c)) {
-					return true;
-				}
-			}
-			return false;
-		}
-
-		////////////////////////////////////////////////////////////
-		static bool HasChars(const char* source, char* c) {
-			bool value = false;
-			for (int i = 0; i < strlen(c); i++) {
-				value &= HasChar(source, c[i]);
-			}
-			return value;
-		}
-
-		////////////////////////////////////////////////////////////
-		static bool HasCharsNoCase(const char* source, char* c) {
-			bool value = false;
-			for (int i = 0; i < strlen(c); i++) {
-				value &= HasCharNoCase(source, c[i]);
-			}
-			return value;
-		}
-	};
-
-	////////////////////////////////////////////////////////////
-	size_t CountRightBefore(const char* source, char c) {
-		size_t count = 0;
-		const char* begin = source;
-		const char* end = begin+strlen(source);
-		while (begin != end) {
-			if (*(begin++) == c) { break; }
-			count++;
-		}
-		return count;
-	}
-
-	////////////////////////////////////////////////////////////
-	bool CharInString(const char* str, char c) {
-		const char* begin = str;
-		const char* end = begin+strlen(str);
-		while (begin != end) {
-			if (*(begin++) == c) {
-				return true;
-			}
-		}
-		return false;
-	}
-	
-	////////////////////////////////////////////////////////////
-	size_t CountRightBefore(const char* source, const char* c) {
-		size_t count = 0;
-		const char* begin = source;
-		const char* end = begin+strlen(source);
-		while (begin != end) {
-			if (CharInString(c, *(begin++))) { break; }
-			count++;
-		}
-		return count;
-	}	
-}
-
-namespace Lib {
-	enum struct NumberType {
-		None 			= 0,
-		Unsigned 	= 1 << 0,
-		Float 		= 1 << 1,
-		Int 			= 1 << 2,
-		Double 		= 1 << 3,
-		Char 			= 1 << 4,
-	};
-
-	struct RawNumber {
-		NumberType type;
-		union {
-			float float_v;
-			int int_v;
-			double double_v;
-			char char_v;
-		};
-	};
-}
-	
-}
-
 #endif
 
 #endif
