@@ -11,7 +11,7 @@
 
 namespace mew {
 
-template<typename T>
+template<typename T, size_t alloc_size = 1U>
 class stack {
 private:
   size_t _M_size, _M_capacity;
@@ -24,16 +24,22 @@ public:
 
   ////////////////////////////////////////////////////////////
   ~stack() {
-    delete[] data;
+    free(data);
   }
 
   ////////////////////////////////////////////////////////////
-  void resize(size_t new_size) {
+  void resize(size_t new_size, bool ignore_size = false) {
+    new_size *= alloc_size;
     data = (T*)realloc(data, new_size);
-    if (_M_size > new_size) {
+    if (!ignore_size && _M_size > new_size) {
       _M_size = new_size;
     }
     _M_capacity = new_size;
+  }
+  
+  ////////////////////////////////////////////////////////////
+  void reserve(size_t size) {
+    resize((_M_capacity+size)*sizeof(T), true);
   }
 
   ////////////////////////////////////////////////////////////
@@ -56,7 +62,7 @@ public:
   }
 
   ////////////////////////////////////////////////////////////
-  size_t get_real_idx(int idx) const {
+  size_t get_real_idx(int idx) const noexcept {
     size_t real_idx;
     real_idx = mod(idx, _M_size);
     real_idx = (_M_size + real_idx) % _M_size;
@@ -74,28 +80,30 @@ public:
   }
 
   ////////////////////////////////////////////////////////////
-  size_t data_size() const noexcept{
+  size_t data_size() const noexcept {
     return (sizeof(T)*_M_size);
   }
 
   ////////////////////////////////////////////////////////////
-  size_t size() const noexcept{
+  size_t size() const noexcept {
     return _M_size;
   }
 
   ////////////////////////////////////////////////////////////
-  void push(T&& value) {
+  size_t push(T&& value) {
     upsize_if_needs();
     T* pointer = data+_M_size;
     memcpy(pointer, &value, sizeof(value));
     _M_size++;
+    return _M_size-1;
   }
 
   ////////////////////////////////////////////////////////////
-  void push(const T& value) {
+  size_t push(const T& value) {
     upsize_if_needs();
     memcpy(data+_M_size, &value, sizeof(value));
     _M_size++;
+    return _M_size-1;
   }
 
   ////////////////////////////////////////////////////////////
@@ -133,6 +141,17 @@ public:
   void clear() {
     _M_size = 0;
     memset(data, 0, _M_capacity);
+  }
+
+  ////////////////////////////////////////////////////////////
+  size_t indexOf(T& value) {
+    for (int i = 0; i < _M_size; i++) {
+      T& cur_el = data[idx];
+      if (memcmp(&value, &cur_el, sizeof(T))) {
+        return i;
+      }
+    }
+    return (size_t)(-1);
   }
 };
 

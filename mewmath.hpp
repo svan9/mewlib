@@ -7,6 +7,7 @@
 #ifndef MEW_MATH_LIB_SO2U
 #define MEW_MATH_LIB_SO2U
 #include "mewlib.h"
+#include <unordered_map>
 
 namespace mew {
 	void _itoa10(int _Value, char *_Dest) {
@@ -25,6 +26,24 @@ namespace mew {
 	template<typename T> 
 	T operator%(const T& a, const T& b) {
 		return mod(a, b);
+	}
+
+	template<typename T>
+	size_t get_hash(T& s) {
+		return reinterpret_cast<size_t>(s);
+	}
+
+	template<typename T>
+	size_t get_hash(T* s) {
+		return reinterpret_cast<size_t>(s);
+	}
+
+	size_t get_cstr_hash(const char* s) {
+		return reinterpret_cast<size_t>(s);
+	}
+
+	size_t get_cstr_hash(const wchar_t* s) {
+		return reinterpret_cast<size_t>(s);
 	}
 }
 

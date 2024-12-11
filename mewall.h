@@ -5,5 +5,6 @@
 #include "mewmath.hpp"
 #include "mewstack.hpp"
 #include "mewstring.hpp"
+#include "mewmap.hpp"
 
 #endif
