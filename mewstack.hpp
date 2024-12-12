@@ -145,8 +145,8 @@ public:
 
   ////////////////////////////////////////////////////////////
   size_t indexOf(T& value) {
-    for (int i = 0; i < _M_size; i++) {
-      T& cur_el = data[idx];
+    for (int i = 0; i < _M_size; ++i) {
+      T& cur_el = data[i];
       if (memcmp(&value, &cur_el, sizeof(T))) {
         return i;
       }
