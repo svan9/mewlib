@@ -13,18 +13,18 @@
 namespace mew {
 
 template<typename T, size_t alloc_size = 1U>
-class stack {
+class list {
 private:
   size_t _M_size, _M_capacity;
   T* data = nullptr;
 public:
   ////////////////////////////////////////////////////////////
-  stack(): _M_capacity(sizeof(T)), _M_size(0) {
+  list(): _M_capacity(sizeof(T)), _M_size(0) {
     data = (T*)malloc(_M_capacity);
   }
 
   ////////////////////////////////////////////////////////////
-  ~stack() {
+  ~list() {
     free(data);
   }
 

@@ -1,7 +1,7 @@
 /**************************************************
  * - Author: so2u
  * - Create Time: 2024-12-07 02:56:40
- * - Git: https://github.com/svan9
+ * - Git: https://github.com/svan9/mewlib
  **************************************************/
 
 #ifndef MEW_MATH_LIB_SO2U

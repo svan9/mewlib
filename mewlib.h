@@ -1,8 +1,9 @@
 /**************************************************
  * - Author: so2u
- * - Create Time: 2024-11-28 17:48:15
- * - Git: https://github.com/svan9
+ * - Create Time: 2024-12-07 02:56:40
+ * - Git: https://github.com/svan9/mewlib
  **************************************************/
+
 
 #ifndef MewLib_IMPL
 #define MewLib_IMPL
@@ -56,9 +57,9 @@
 	#define __mewassert_nm_r(strexpr, file, line, func) \
 		"\nAssert failed at %s:%i, %s(...)\n  With expression (%s)\n", file, line, func, strexpr
 	#define __mewassert_nm_t_bad(func, val, correct) \
-		printf("🔴 \033[31mTest failed %s(%i != %i) \033[0m\n", func, val, correct);
+		putwchar(L'');printf("\033[31mTest failed %s(%i != %i) \033[0m\n", func, val, correct);
 	#define __mewassert_nm_t_good(func, val, correct) \
-		printf("🟢 \033[92mTest success %s(%i == %i)\033[0m\n", func, val, correct);
+		putwchar(L'');printf("\033[92mTest success %s(%i == %i)\033[0m\n", func, val, correct);
 
 #endif
 
