@@ -5,8 +5,8 @@
  **************************************************/
 
 
-#ifndef MEW_STACK_LIB_SO2U
-#define MEW_STACK_LIB_SO2U
+#ifndef MEW_MAP_LIB_SO2U
+#define MEW_MAP_LIB_SO2U
 #include "mewlib.h"
 #include "mewmath.hpp"
 #include "mewstack.hpp"
@@ -28,7 +28,7 @@ public:
   }
 
   ////////////////////////////////////////////////////////////
-  T& at(Key& idx) {
+  Val& at(Key& idx) {
     MewAssert(has(idx));
     size_t hash = mew::get_hash(idx);
     size_t index = _M_keys.indexOf(hash);
@@ -47,7 +47,7 @@ public:
     size_t hash = mew::get_hash(idx);
     size_t index = _M_keys.indexOf(hash);
     MewAssert(index != (size_t)(-1));
-    _M_value.erase(index);
+    _M_values.erase(index);
     _M_keys.erase(hash);
   }
 
@@ -64,7 +64,7 @@ public:
 
   ////////////////////////////////////////////////////////////
   void insert(Key& k, Val& v) {
-    size_t hash = mew::get_hash(idx);
+    size_t hash = mew::get_hash(k);
     size_t index = _M_keys.indexOf(hash);
     if (index == (size_t)(-1)) {
       index = _M_keys.push(hash);

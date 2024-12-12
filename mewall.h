@@ -13,6 +13,7 @@
 #include "mewstring.hpp"
 #include "mewmap.hpp"
 #include "mewlist.hpp"
+#include "mewsmap.hpp"
 
 namespace Tests {
 	inline void test_mew_stack() {
@@ -64,6 +65,24 @@ namespace Tests {
 		MewTest(x, 0xffffffff);
 		x = __stack.pop();
 		MewTest(x, 12);
+	}
+
+	inline void test_mew_smap() {
+		mew::simple_map<int, float, 8U> __stack;
+		__stack.insert({1, 10.f});
+		__stack.insert({14, 13.f});
+		__stack.insert({16, 14.4f});
+		__stack.insert({13, 1.14f});
+		__stack.insert({2, .55f});
+		float val = __stack.at(2);
+		MewTest(val, .55f);
+		val = __stack.at(14);
+		MewTest(val, 13.f);
+		val = __stack.at(16);
+		MewTest(val, 14.4f);
+		MewTest(__stack.size(), 5U);
+		__stack.clear();
+		MewTest(__stack.size(), 0U);
 	}
 };
 
