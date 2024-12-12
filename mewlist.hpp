@@ -5,8 +5,8 @@
  **************************************************/
 
 
-#ifndef MEW_STACK_LIB_SO2U
-#define MEW_STACK_LIB_SO2U
+#ifndef MEW_LIST_LIB_SO2U
+#define MEW_LIST_LIB_SO2U
 #include "mewlib.h"
 #include "mewmath.hpp"
 
