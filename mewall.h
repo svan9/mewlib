@@ -13,7 +13,9 @@
 #include "mewstring.hpp"
 #include "mewmap.hpp"
 #include "mewlist.hpp"
+#include "mewmatrix.hpp"
 #include "mewsmap.hpp"
+#include "mewiterator.hpp"
 
 namespace Tests {
 	inline void test_mew_stack() {

@@ -9,6 +9,7 @@
 #define MEW_STACK_LIB_SO2U
 #include "mewlib.h"
 #include "mewmath.hpp"
+#include "mewiterator.hpp"
 
 namespace mew {
 
@@ -153,6 +154,18 @@ public:
       }
     }
     return (size_t)(-1);
+  }
+
+  ////////////////////////////////////////////////////////////
+  iterator<T> begin() {
+    iterator<T> it(data, _M_size);
+    return it;
+  }
+
+  ////////////////////////////////////////////////////////////
+  iterator<T> end() {
+    iterator<T> it(data+(_M_size*sizeof(T*)), 0);
+    return it;
   }
 };
 
