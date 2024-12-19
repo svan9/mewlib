@@ -174,12 +174,18 @@ public:
 
   ////////////////////////////////////////////////////////////
   iterator<T> begin() {
+<<<<<<< HEAD
     iterator<T> tmp(data, _M_size);
     return tmp;
+=======
+    iterator<T> it(data, _M_size);
+    return it;
+>>>>>>> b92be18e87ead7f49618c6b8951e01a329f41714
   }
 
   ////////////////////////////////////////////////////////////
   iterator<T> end() {
+<<<<<<< HEAD
     iterator<T> tmp(data+(_M_size*sizeof(T)));
     return tmp;
   }
@@ -213,6 +219,11 @@ public:
       (0 != memcmp(st.data, list.begin(), st.data_size()));
   }
 
+=======
+    iterator<T> it(data+(_M_size*sizeof(T*)), 0);
+    return it;
+  }
+>>>>>>> b92be18e87ead7f49618c6b8951e01a329f41714
 };
 
 }

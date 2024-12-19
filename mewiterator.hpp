@@ -14,6 +14,7 @@ namespace mew {
 
 template<typename T>
 class iterator {
+<<<<<<< HEAD
 private:
   T* _M_begin, *_M_const_begin, *_M_end;
   bool _can_update(int offset) {
@@ -45,10 +46,33 @@ public:
   iterator<T>& operator++() {
     if (_can_update(_el_size())) 
       _M_begin = (T*)(_M_begin+_el_size());
+=======
+public:
+  typedef iterator<T> iterator_t;
+  typedef const iterator<T>& r_iterator_t;
+private:
+  size_t size;
+  T* data = nullptr;
+public:
+  ////////////////////////////////////////////////////////////
+  iterator() { }
+
+  ////////////////////////////////////////////////////////////
+  iterator(T* _data, size_t _size): size(_size), data(_data) { }
+
+  ////////////////////////////////////////////////////////////
+  iterator_t& operator++() {
+    if (size == 0) {
+      return *this;
+    }
+    size--;
+    data += sizeof(T);
+>>>>>>> b92be18e87ead7f49618c6b8951e01a329f41714
     return *this;
   }
 
   ////////////////////////////////////////////////////////////
+<<<<<<< HEAD
   iterator<T> operator++(int) {
     iterator<T> tmp(*this);
     ++(*this);
@@ -115,6 +139,28 @@ public:
     return l._M_begin != r._M_begin;
   }
 
+=======
+  iterator_t operator++(int) {
+    iterator_t it(*this);
+    ++(*this);
+    return *this; 
+  }
+
+  ////////////////////////////////////////////////////////////
+  T& begin() {
+    return data;
+  } 
+
+  ////////////////////////////////////////////////////////////
+  friend bool operator==(r_iterator_t r, r_iterator_t l) {
+    return r.data == l.data;
+  }
+
+  ////////////////////////////////////////////////////////////
+  friend bool operator!=(r_iterator_t r, r_iterator_t l) {
+    return r.data != l.data;
+  }
+>>>>>>> b92be18e87ead7f49618c6b8951e01a329f41714
 };
 
 }
