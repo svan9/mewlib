@@ -7,8 +7,10 @@
 
 #ifndef MEW_STACK_LIB_SO2U
 #define MEW_STACK_LIB_SO2U
+#include <initializer_list>
 #include "mewlib.h"
 #include "mewmath.hpp"
+#include "mewiterator.hpp"
 
 namespace mew {
 
@@ -20,6 +22,11 @@ private:
 public:
   ////////////////////////////////////////////////////////////
   stack(): _M_capacity(sizeof(T)), _M_size(0) {
+    data = (T*)malloc(_M_capacity);
+  }
+
+  ////////////////////////////////////////////////////////////
+  stack(size_t size): _M_capacity(sizeof(T)*size), _M_size(0) {
     data = (T*)malloc(_M_capacity);
   }
 
@@ -108,6 +115,16 @@ public:
   }
 
   ////////////////////////////////////////////////////////////
+  template<typename ...Args>
+  size_t emplace(Args... args) {
+    upsize_if_needs();
+    T* value = new T(args...);
+    memcpy(data+_M_size, &value, sizeof(T));
+    _M_size++;
+    return _M_size-1;
+  }
+
+  ////////////////////////////////////////////////////////////
   T top() {
     return at(-1);
   }
@@ -154,6 +171,48 @@ public:
     }
     return (size_t)(-1);
   }
+
+  ////////////////////////////////////////////////////////////
+  iterator<T> begin() {
+    iterator<T> tmp(data, _M_size);
+    return tmp;
+  }
+
+  ////////////////////////////////////////////////////////////
+  iterator<T> end() {
+    iterator<T> tmp(data+(_M_size*sizeof(T)));
+    return tmp;
+  }
+
+  ////////////////////////////////////////////////////////////
+  stack<T,alloc_size> reversed() {
+    stack<T,alloc_size> nst(_M_size);
+    for (int i = _M_size-1; i >= 0; --i) {
+      auto el = at(i);
+      nst.push(el);
+    }
+    return nst;
+  }
+
+  ////////////////////////////////////////////////////////////
+  stack<T,alloc_size> clone() {
+    stack<T,alloc_size> nst(*this);
+    return nst;
+  }
+
+  ////////////////////////////////////////////////////////////
+  friend bool operator==(stack<T,alloc_size>& st, std::initializer_list<T> list) {
+    auto a = memcmp(st.data, list.begin(), st.data_size());
+    return (st.size() == list.size()) && 
+      (0 == memcmp(st.data, list.begin(), st.data_size()));
+  }
+
+  ////////////////////////////////////////////////////////////
+  friend bool operator!=(stack<T,alloc_size>& st, std::initializer_list<T> list) {
+    return (st.size() != list.size()) || 
+      (0 != memcmp(st.data, list.begin(), st.data_size()));
+  }
+
 };
 
 }

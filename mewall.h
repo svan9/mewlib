@@ -14,6 +14,8 @@
 #include "mewmap.hpp"
 #include "mewlist.hpp"
 #include "mewsmap.hpp"
+#include "mewiterator.hpp"
+#include "mewprint.hpp"
 
 namespace Tests {
 	inline void test_mew_stack() {
@@ -40,7 +42,20 @@ namespace Tests {
 		MewTest(x, 0xffffffff);
 		x = __stack.pop();
 		MewTest(x, 12);
+		__stack.push(1);
+		__stack.push(2);
+		__stack.push(3);
+		__stack.push(4);
+		auto rev = __stack.reversed();
+		auto mrev = std::initializer_list({4, 3, 2, 1});
+		x = (rev == mrev);
+		MewTest(x, (int)true);
+		if (!x) {
+			std::cout << "stack: " << rev << std::endl;
+			std::cout << "ref: " << mrev << std::endl;
+		}
 	}
+
 	inline void test_mew_list() {
 		mew::list<int> __stack;
 		__stack.push(9);

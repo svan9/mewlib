@@ -67,6 +67,8 @@
 		if (!(value == correct)) { __mewassert_nm_t_bad(__func__, value, correct); }\
 		else { __mewassert_nm_t_good(__func__, value, correct); }
 
+// #define ProcMewStringEnum()
+// #define MewStringEnum(...)
 
 #if defined(MEW_USE_THROWS) && __cplusplus
 	#define MewUserAssert(expr, message) \
@@ -119,7 +121,9 @@
 
 	#include <string.h>
 	#include <string>
+	#include <filesystem>
 	#include <wchar.h>
+	#include <fstream>
 #ifdef __CXX20
 	#include <concepts>
 #endif
@@ -169,6 +173,46 @@ namespace mew {
 	template<typename VF, typename VS>
 	concept same_as = std::same_as<ClearType<VF>, ClearType<VS>>;
 
+	std::string ReadFile(std::filesystem::path& path) {
+		constexpr const size_t read_size = 4096;
+		std::ifstream file(path, std::ios::in);
+    MewAssert(file.is_open());
+    file.seekg(std::ios::beg);
+    file >> std::noskipws;
+		std::string out;
+		std::string buf(read_size, '\0');
+		while (file.read(&buf[0], read_size)) {
+			out.append(buf, 0, file.gcount());
+    }
+		out.append(buf, 0, file.gcount());
+		return out;
+	}
+
+	std::string ReadFile(const char* path) {
+		std::filesystem::path __path(path);
+    if (!__path.is_absolute()) {
+      __path = std::filesystem::absolute(__path.lexically_normal());
+    }
+    return ReadFile(__path);
+	}
+
+	int strcmp(char* s, char* m, size_t size) {
+		for (int i = 0; i < size; ++i) {
+			if (s[i] != m[i]) {
+				return 0;
+			}
+		}
+		return 1;
+	}
+	
+	int strcmp(const char* s, const char* m, size_t size) {
+		for (int i = 0; i < size; ++i) {
+			if (s[i] != m[i]) {
+				return 0;
+			}
+		}
+		return 1;
+	}
 #endif	
 }
 
