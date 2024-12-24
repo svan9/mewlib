@@ -16,10 +16,9 @@
 #include "mewmatrix.hpp"
 #include "mewsmap.hpp"
 #include "mewiterator.hpp"
-<<<<<<< HEAD
 #include "mewprint.hpp"
-=======
->>>>>>> b92be18e87ead7f49618c6b8951e01a329f41714
+#include "mewargs.hpp"
+#include "mewdll.hpp"
 
 namespace Tests {
 	inline void test_mew_stack() {
