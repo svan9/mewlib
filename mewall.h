@@ -19,6 +19,8 @@
 #include "mewprint.hpp"
 #include "mewargs.hpp"
 #include "mewdll.hpp"
+#include "mewutils.hpp"
+#include "mewfeature.hpp"
 
 namespace Tests {
 	inline void test_mew_stack() {

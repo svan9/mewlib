@@ -115,11 +115,20 @@
 			(lexpr) == (rexpr) ||                    \
 			MEW_IN_RANGE((lexpr)-(range), (lexpr)+(range), rexpr))
 #endif
+#define MEW_SBOOL(expr) ((expr)? "true": "false")
+
+#include <string.h>
+
+char* scopy(const char* str, size_t len) {
+	char* out = (char*)malloc(len+1);
+	memcpy(out, str, len);
+	out[len] = '\0';
+	return out;
+}
 
 #ifdef __cplusplus
 	#define MewPrintError(_error) printf("\nErrored from %s:%i at function `%s(...)`\n\twhat: %s", __FILE__, __LINE__, __func__, (_error).what());
 
-	#include <string.h>
 	#include <string>
 	#include <filesystem>
 	#include <wchar.h>
@@ -194,6 +203,38 @@ namespace mew {
       __path = std::filesystem::absolute(__path.lexically_normal());
     }
     return ReadFile(__path);
+	}
+
+	std::ifstream getIfStream(std::filesystem::path& path) {
+		std::ifstream file(path, std::ios::in);
+    MewAssert(file.is_open());
+    file.seekg(std::ios::beg);
+    file >> std::noskipws;
+		return file;
+	}
+
+	std::ifstream getIfStream(const char* dir, const char* file) {
+		std::filesystem::path __path(dir);
+		__path /= file;
+		if (!__path.is_absolute()) {
+			__path = std::filesystem::absolute(__path.lexically_normal());
+		}
+		return getIfStream(__path);
+	}
+	
+	std::ifstream getIfStream(const char* path) {
+		std::filesystem::path __path(path);
+    if (!__path.is_absolute()) {
+      __path = std::filesystem::absolute(__path.lexically_normal());
+    }
+    return getIfStream(__path);
+	}
+
+	const char* concatPath(const char* first, const char* second) {
+		std::filesystem::path __path(first);
+		__path = __path / (second[0] == '/' ? second+1 : second);
+		auto ref = __path.string();
+		return scopy(ref.c_str(), ref.size());
 	}
 
 	int strcmp(char* s, char* m, size_t size) {
