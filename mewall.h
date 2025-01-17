@@ -17,8 +17,10 @@
 #include "mewsmap.hpp"
 #include "mewiterator.hpp"
 #include "mewprint.hpp"
+#ifndef RAYLIB_H
 #include "mewargs.hpp"
 #include "mewdll.hpp"
+#endif
 #include "mewutils.hpp"
 #include "mewfeature.hpp"
 

@@ -28,9 +28,9 @@
 	#define __CXX20
 #endif
 
-#if defined(__cplusplus) && defined(MEW_USE_THROWS) 
-#undef MEW_USE_THROWS
-#endif 
+// #if defined(__cplusplus) && defined(MEW_USE_THROWS) 
+// #undef MEW_USE_THROWS
+// #endif 
 
 #ifndef NULLVAL
 #define NULLVAL ((void)0)
@@ -124,6 +124,10 @@ char* scopy(const char* str, size_t len) {
 	memcpy(out, str, len);
 	out[len] = '\0';
 	return out;
+}
+
+char* scopy(const char* str) {
+	return scopy(str, strlen(str));
 }
 
 #ifdef __cplusplus

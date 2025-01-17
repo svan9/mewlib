@@ -45,6 +45,52 @@ namespace mew {
 	size_t get_cstr_hash(const wchar_t* s) {
 		return reinterpret_cast<size_t>(s);
 	}
+
+	size_t get_index(size_t x, size_t y, size_t width) {
+		return y * width + x;
+	}
+
+	float clamp(float val, float min, float max) {
+		if (val < min) return min;
+		if (val > max) return max;
+		return val;
+	}
+	
+	int clamp(int val, int min, int max) {
+		if (val < min) return min;
+		if (val > max) return max;
+		return val;
+	}
+
+	float rclamp(float val, float min, float max) {
+		if (val > max) return min;
+		return val;
+	}
+	int rclamp(int val, int min, int max) {
+		if (val > max) return min;
+		return val;
+	}
+	
+	void rclamp2d(
+		float& x_val, float& y_val, 
+		float x_min, float x_max, 
+		float y_min, float y_max,
+		float x_step, float y_step
+	) {
+		if (x_val > x_max) {
+			x_val = x_min;
+			y_val += y_step;
+		} else if (y_val > y_max) {
+			y_val = y_min;
+			x_val = x_min;
+		} else {
+			x_val += x_step;
+		}
+	}
+
+	float lfabs(float value) {
+		return value < 0 ? 0 : value;
+	}
 }
 
 #endif

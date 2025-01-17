@@ -134,7 +134,7 @@ public:
   ////////////////////////////////////////////////////////////
   size_t push(T* value) {
     upsize_if_needs();
-    T* pointer = _M_data+(_M_size*sizeof(T));
+    void* pointer = _M_data+(_M_size*sizeof(T));
     memcpy(pointer, value, sizeof(T));
     _M_size++;
     return _M_size-1;
@@ -142,7 +142,7 @@ public:
   ////////////////////////////////////////////////////////////
   size_t push(const T& value) {
     upsize_if_needs();
-    T* pointer = _M_data+(_M_size*sizeof(T));
+    void* pointer = _M_data+(_M_size*sizeof(T));
     memcpy(pointer, &value, sizeof(value));
     _M_size++;
     return _M_size-1;
@@ -198,6 +198,18 @@ public:
   void clear() {
     _M_size = 0;
     memset(_M_data, 0, _M_capacity);
+  }
+
+  ////////////////////////////////////////////////////////////
+  void fill(T value) {
+    _M_size = _M_capacity;
+    memset(_M_data, value, _M_capacity);
+  }
+
+  ////////////////////////////////////////////////////////////
+  void clear(T value) {
+    _M_size = 0;
+    memset(_M_data, value, _M_capacity);
   }
 
   ////////////////////////////////////////////////////////////

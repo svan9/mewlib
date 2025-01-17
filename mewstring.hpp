@@ -245,8 +245,15 @@ namespace string {
 		size_t size = strlen(source);
 		return source[size-1] == c;
 	}
-}
 
+	////////////////////////////////////////////////////////////
+	bool SameStr(const char* str1, const char* str2) {
+		size_t s1 = strlen(str1);
+		size_t s2 = strlen(str2);
+		if (s1 != s2) { return false; }
+		return 0 == memcmp(str1, str2, s1);
+	}
+}
 }
 
 #endif
