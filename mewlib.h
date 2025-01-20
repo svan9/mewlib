@@ -108,6 +108,8 @@
 	#define MEW_IN_RANGE(min, max, value) ((min) <= (value) && (value) <= (max))
 	#define MEW_RM_ALIGN(value, align) ((value) - ((value) % (align)))
 	#define MEW_RM_ALIGN_A(value, align) ((value) + ((value) % (align)))
+	#define MEW_CEIL(val) ((float)((int)(val)))
+	#define MEW_ROUND(val) ((float)((int)((val)>0?(val)+0.5f:(val)-0.5f)))
 
 	#define MEW_RANGE_EQ_PRT(lexpr, rexpr, range) ()
 

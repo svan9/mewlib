@@ -23,6 +23,8 @@
 #endif
 #include "mewutils.hpp"
 #include "mewfeature.hpp"
+#include "mewbinary.hpp"
+#include "mewvector.hpp"
 
 namespace Tests {
 	inline void test_mew_stack() {
