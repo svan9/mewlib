@@ -12,6 +12,9 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <time.h>
+#include <chrono>
+#include <conio.h>
+#include <future>
 
 namespace mew {
 	void _itoa10(int _Value, char *_Dest) {
@@ -215,6 +218,434 @@ namespace mew {
 		}
 	};
 
+	int wait_char() {
+		if (_kbhit()) return _getch();
+		else return -1;
+	}
+
+	typedef int&(*asi)(int&);
+	typedef float&(*asf)(float&);
+	typedef lli&(*asl)(lli&);
+	typedef double&(*asd)(double&);
+	
+	template<typename A>
+	using asio = A&(*)(A&);
+	template<typename A, typename B>
+	using adio = A&(*)(A&, B&);
+
+	enum struct ATYPE {
+		INT, FLOAT, LONG, DOUBLE
+	};
+	using asgio = void(*)(void*, ATYPE);
+	using adgio = void(*)(void*, ATYPE, void*, ATYPE);
+
+	ATYPE getATYPE(int a) {
+		return ATYPE::INT;
+	}
+	ATYPE getATYPE(float a) {
+		return ATYPE::FLOAT;
+	}
+	ATYPE getATYPE(lli a) {
+		return ATYPE::LONG;
+	}
+	ATYPE getATYPE(double a) {
+		return ATYPE::DOUBLE;
+	}
+
+	void gen_asgio(asgio fn, int& a) {
+		fn(&a, ATYPE::INT);
+	}
+	void gen_asgio(asgio fn, float& a) {
+		fn(&a, ATYPE::FLOAT);
+	}
+	void gen_asgio(asgio fn, lli& a) {
+		fn(&a, ATYPE::LONG);
+	}
+	void gen_asgio(asgio fn, double& a) {
+		fn(&a, ATYPE::DOUBLE);
+	}
+
+	template<typename>
+	struct is_in_adgio_t_helper
+		: public std::false_type { };
+	template<>
+	struct is_in_adgio_t_helper<int>
+		: public std::true_type { };
+	template<>
+	struct is_in_adgio_t_helper<float>
+		: public std::true_type { };
+	template<>
+	struct is_in_adgio_t_helper<lli>
+		: public std::true_type { };
+	template<>
+	struct is_in_adgio_t_helper<double>
+		: public std::true_type { };
+
+	template<typename _Tp>
+	struct is_in_adgio_t
+    : public is_in_adgio_t_helper<std::__remove_cv_t<_Tp>>::type 
+    { };
+
+	template<typename>
+	struct is_in_nd_adgio_t_helper
+		: public std::false_type { };
+	template<>
+	struct is_in_nd_adgio_t_helper<int>
+		: public std::true_type { };
+	template<>
+	struct is_in_nd_adgio_t_helper<lli>
+		: public std::true_type { };
+
+	template<typename _Tp>
+	struct adgio_numeric_t
+    : public is_in_nd_adgio_t_helper<std::__remove_cv_t<_Tp>>::type 
+    { };
+
+
+
+	template<typename T, typename K>
+	void gen_adgio(adgio fn, T& a, K& b) {
+		static_assert(is_in_adgio_t<T>::value && is_in_adgio_t<K>::value);
+		fn(&a, getATYPE(a), &b, getATYPE(b));
+	}
+
+	int& ainc(int& a) { return ++a; }
+	float& ainc(float& a) { return ++a; }
+	lli& ainc(lli& a) { return ++a; }
+	double& ainc(double& a) { return ++a; }
+
+	void aginc(void* a, ATYPE at) {
+		switch(at) {
+			case ATYPE::INT: 		ainc(*(int*)a); break;
+			case ATYPE::FLOAT: 	ainc(*(float*)a); break;
+			case ATYPE::LONG: 	ainc(*(lli*)a); break;
+			case ATYPE::DOUBLE: ainc(*(double*)a); break;
+		}
+	}
+
+	int& adec(int& a) { return --a; }
+	float& adec(float& a) { return --a; }
+	lli& adec(lli& a) { return --a; }
+	double& adec(double& a) { return --a; }
+
+	void agdec(void* a, ATYPE at) {
+		switch(at) {
+			case ATYPE::INT: 		adec(*(int*)a); break;
+			case ATYPE::FLOAT: 	adec(*(float*)a); break;
+			case ATYPE::LONG: 	adec(*(lli*)a); break;
+			case ATYPE::DOUBLE: adec(*(double*)a); break;
+		}
+	}
+
+	int& anot(int& a) { return a = ~a; }
+	float& anot(float& a) { MewUserAssert(false, "NOT SUPPORTED ANOT TYPE (float)"); }
+	lli& anot(lli& a) { return a = ~a; }
+	double& anot(double& a) { MewUserAssert(false, "NOT SUPPORTED ANOT TYPE (double)"); }
+
+	void agnot(void* a, ATYPE at) {
+		switch(at) {
+			case ATYPE::INT: 		anot(*(int*)a); break;
+			case ATYPE::FLOAT: 	anot(*(float*)a); break;
+			case ATYPE::LONG: 	anot(*(lli*)a); break;
+			case ATYPE::DOUBLE: anot(*(double*)a); break;
+		}
+	}
+
+	#define agg_adgt()	static_assert(is_in_adgio_t<T>::value && is_in_adgio_t<K>::value, "unsupported type"); 
+	#define agg_adgt_nn()	static_assert(adgio_numeric_t<T>::value && adgio_numeric_t<K>::value, "unsupported type"); 
+
+	#pragma region _agg_gen
+#define agg_gen(_fn, _a, _at, _b, _bt, _no_float) \
+	switch (_at)                                    \
+	{                                               \
+	case ATYPE::INT:                                \
+	{                                               \
+		switch (_bt)                                  \
+		{                                             \
+		case ATYPE::INT:                              \
+		{                                             \
+			_fn(*(int *)_a, *(int *)_b);                \
+		}                                             \
+		break;                                        \
+		case ATYPE::FLOAT:                            \
+		{                                             \
+			if (!_no_float)                             \
+				_fn(*(int *)_a, *(float *)_b);            \
+		}                                             \
+		break;                                        \
+		case ATYPE::LONG:                             \
+		{                                             \
+			_fn(*(int *)_a, *(lli *)_b);                \
+		}                                             \
+		break;                                        \
+		case ATYPE::DOUBLE:                           \
+		{                                             \
+			if (!_no_float)                             \
+				_fn(*(int *)_a, *(double *)_b);           \
+		}                                             \
+		break;                                        \
+		}                                             \
+	}                                               \
+	break;                                          \
+	case ATYPE::FLOAT:                              \
+	{                                               \
+		if (_no_float)                                \
+			break;                                      \
+		switch (_bt)                                  \
+		{                                             \
+		case ATYPE::INT:                              \
+		{                                             \
+			_fn(*(float *)_a, *(int *)_b);              \
+		}                                             \
+		break;                                        \
+		case ATYPE::FLOAT:                            \
+		{                                             \
+			_fn(*(float *)_a, *(float *)_b);            \
+		}                                             \
+		break;                                        \
+		case ATYPE::LONG:                             \
+		{                                             \
+			_fn(*(float *)_a, *(lli *)_b);              \
+		}                                             \
+		break;                                        \
+		case ATYPE::DOUBLE:                           \
+		{                                             \
+			_fn(*(float *)_a, *(double *)_b);           \
+		}                                             \
+		break;                                        \
+		}                                             \
+	}                                               \
+	break;                                          \
+	case ATYPE::LONG:                               \
+	{                                               \
+		switch (_bt)                                  \
+		{                                             \
+		case ATYPE::INT:                              \
+		{                                             \
+			_fn(*(lli *)_a, *(int *)_b);                \
+		}                                             \
+		break;                                        \
+		case ATYPE::FLOAT:                            \
+		{                                             \
+			if (!_no_float)                             \
+				_fn(*(lli *)_a, *(float *)_b);            \
+		}                                             \
+		break;                                        \
+		case ATYPE::LONG:                             \
+		{                                             \
+			_fn(*(lli *)_a, *(lli *)_b);                \
+		}                                             \
+		break;                                        \
+		case ATYPE::DOUBLE:                           \
+		{                                             \
+			if (!_no_float)                             \
+				_fn(*(lli *)_a, *(double *)_b);           \
+		}                                             \
+		break;                                        \
+		}                                             \
+	}                                               \
+	break;                                          \
+	case ATYPE::DOUBLE:                             \
+	{                                               \
+		if (_no_float)                                \
+			break;                                      \
+		switch (_bt)                                  \
+		{                                             \
+		case ATYPE::INT:                              \
+		{                                             \
+			_fn(*(double *)_a, *(int *)_b);             \
+		}                                             \
+		break;                                        \
+		case ATYPE::FLOAT:                            \
+		{                                             \
+			_fn(*(double *)_a, *(float *)_b);           \
+		}                                             \
+		break;                                        \
+		case ATYPE::LONG:                             \
+		{                                             \
+			_fn(*(double *)_a, *(lli *)_b);             \
+		}                                             \
+		break;                                        \
+		case ATYPE::DOUBLE:                           \
+		{                                             \
+			_fn(*(double *)_a, *(double *)_b);          \
+		}                                             \
+		break;                                        \
+		}                                             \
+	}                                               \
+	break;                                          \
+	}
+
+#define agg_gen_no_float(_fn, _a, _at, _b, _bt) \
+	switch (_at)                                  \
+	{                                             \
+	case ATYPE::INT:                              \
+	{                                             \
+		switch (_bt)                                \
+		{                                           \
+		case ATYPE::INT:                            \
+		{                                           \
+			_fn(*(int *)_a, *(int *)_b);              \
+		}                                           \
+		break;                                      \
+		case ATYPE::LONG:                           \
+		{                                           \
+			_fn(*(int *)_a, *(lli *)_b);              \
+		}                                           \
+		break;                                      \
+		}                                           \
+	}                                             \
+	break;                                        \
+	case ATYPE::LONG:                             \
+	{                                             \
+		switch (_bt)                                \
+		{                                           \
+		case ATYPE::INT:                            \
+		{                                           \
+			_fn(*(lli *)_a, *(int *)_b);              \
+		}                                           \
+		break;                                      \
+		case ATYPE::LONG:                           \
+		{                                           \
+			_fn(*(lli *)_a, *(lli *)_b);              \
+		}                                           \
+		break;                                      \
+		}                                           \
+	}                                             \
+	break;                                        \
+	}
+#pragma endregion _add_gen
+
+	template<typename T, typename K>
+	T& aadd(T& a, K& b) {
+		agg_adgt();
+		a += b;
+		return a;
+	}
+
+	void agadd(void* a, ATYPE at, void* b, ATYPE bt) {
+		agg_gen(aadd, a, at, b, bt, false);
+	}
+
+	template<typename T, typename K>
+	T& asub(T& a, K& b) {
+		agg_adgt();
+		a -= b;
+		return a;
+	}
+
+	void agsub(void* a, ATYPE at, void* b, ATYPE bt) {
+		agg_gen(asub, a, at, b, bt, false);
+	}
+
+	template<typename T, typename K>
+	T& amul(T& a, K& b) {
+		agg_adgt();
+		a *= b;
+		return a;
+	}
+
+	void agmul(void* a, ATYPE at, void* b, ATYPE bt) {
+		agg_gen(amul, a, at, b, bt, false);
+	}
+
+	template<typename T, typename K>
+	T& adiv(T& a, K& b) {
+		agg_adgt();
+		a /= b;
+		return a;
+	}
+
+	void agdiv(void* a, ATYPE at, void* b, ATYPE bt) {
+		agg_gen(adiv, a, at, b, bt, false);
+	}
+
+	template<typename T, typename K>
+	T& aand(T& a, K& b) {
+		agg_adgt_nn();
+		a &= b;
+		return a;
+	}
+
+	void agand(void* a, ATYPE at, void* b, ATYPE bt) {
+		agg_gen_no_float(aand, a, at, b, bt);
+	}
+
+	template<typename T, typename K>
+	T& aor(T& a, K& b) {
+		agg_adgt_nn();
+		a |= b;
+		return a;
+	}
+
+	void agor(void* a, ATYPE at, void* b, ATYPE bt) {
+		agg_gen_no_float(aor, a, at, b, bt);
+	}
+
+	template<typename T, typename K>
+	T& axor(T& a, K& b) {
+		agg_adgt_nn();
+		a ^= b;
+		return a;
+	}
+
+	void agxor(void* a, ATYPE at, void* b, ATYPE bt) {
+		agg_gen_no_float(axor, a, at, b, bt);
+	}
+
+	template<typename T, typename K>
+	T& als(T& a, K& b) {
+		agg_adgt_nn();
+		a <<= b;
+		return a;
+	}
+
+	void agls(void* a, ATYPE at, void* b, ATYPE bt) {
+		agg_gen_no_float(als, a, at, b, bt);
+	}
+
+	template<typename T, typename K>
+	T& ars(T& a, K& b) {
+		agg_adgt_nn();
+		a >>= b;
+		return a;
+	}
+
+	void agrs(void* a, ATYPE at, void* b, ATYPE bt) {
+		agg_gen_no_float(ars, a, at, b, bt);
+	}
+
+	template<typename T, typename K>
+	T& amov(T& a, K& b) {
+		agg_adgt();
+		void* __a = &b;
+		void* __b = &a;
+		size_t __less = sizeof(T);
+		if (sizeof(T) >= sizeof(K)) {
+			__a = &a;
+			__b = &b;
+			__less = sizeof(K);
+		}
+		memcpy(__a, __b, __less);
+		return a;
+	}
+
+	void agmov(void* a, ATYPE at, void* b, ATYPE bt) {
+		agg_gen(amov, a, at, b, bt, false);
+	}
+
+	template<typename T, typename K>
+	T& aswap(T& a, K& b) {
+		agg_adgt();
+		T templ = a;
+		a = b;
+		b = templ;
+		return a;
+	}
+
+	void agswap(void* a, ATYPE at, void* b, ATYPE bt) {
+		agg_gen(aswap, a, at, b, bt, false);
+	}
 }
 
 #endif

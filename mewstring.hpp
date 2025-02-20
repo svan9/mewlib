@@ -12,10 +12,25 @@
 #ifndef __cplusplus
 #error cpp only
 #endif
+#include <cstdarg>
 
 namespace mew {
   
 namespace string {
+	char* Format(const char* format, ...) {
+		va_list args;
+		va_start(args, format);
+		size_t size = vsnprintf(nullptr, 0, format, args) + 1; // Extra space for '\0'
+		va_end(args);
+
+		std::unique_ptr<char[]> buf(new char[size]);
+		va_start(args, format);
+		vsnprintf(buf.get(), size, format, args);
+		va_end(args);
+		return scopy(buf.get());
+	}
+	
+	
   char *ansi(wchar_t *unicode) {
     size_t size = wcslen(unicode);
     char* buffer = new char[size+1]; 

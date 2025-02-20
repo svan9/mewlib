@@ -14,9 +14,6 @@
 #ifndef MEW_NO_RELEASE
 	#define MEW_NO_RELEASE
 #endif
-#ifndef MEW_USE_THROWS
-	#define MEW_USE_THROWS
-#endif
 
 #ifndef MEW_NO_RELEASE
 	#ifndef DEBUG
@@ -70,7 +67,7 @@
 // #define ProcMewStringEnum()
 // #define MewStringEnum(...)
 
-#if defined(MEW_USE_THROWS) && __cplusplus
+#if !defined(MEW_NOTUSE_THROWS) && __cplusplus
 	#define MewUserAssert(expr, message) \
 		if (!(expr)) { throw std::runtime_error(message); }
 	#define MewAssert(expr) \
@@ -146,8 +143,12 @@ char* scopy(const char* str) {
 typedef char* data_t;
 typedef unsigned char byte;
 typedef unsigned int uint;
-#ifdef __cplusplus
+typedef unsigned int uint;
+typedef long long int lli;
 namespace mew {
+	typedef char* data_t;
+	#ifdef __cplusplus
+	typedef unsigned char byte;
 #ifdef __CXX20
 	template<typename>
 	struct ClearType;
@@ -217,6 +218,15 @@ namespace mew {
     file.seekg(std::ios::beg);
     file >> std::noskipws;
 		return file;
+	}
+	int readInt4Bytes(std::ifstream& file) {
+		int value;
+		file.read(reinterpret_cast<char*>(&value), sizeof(value));
+		return value;
+	}
+	template<typename T>
+	void readBytes(std::ifstream& file, T& out) {
+		file.read(reinterpret_cast<char*>(&out), sizeof(out));
 	}
 
 	std::ifstream getIfStream(const char* dir, const char* file) {

@@ -69,6 +69,13 @@ public:
   }
 
   ////////////////////////////////////////////////////////////
+  void upsize_if_needs(size_t offset) {
+    MewAssert(offset <= _M_size);
+    if ((_M_size+1-offset)*sizeof(T) > _M_capacity) {
+      resize((_M_size+1)*sizeof(T));
+    }
+  }
+  ////////////////////////////////////////////////////////////
   void upsize_if_needs() {
     if ((_M_size+1)*sizeof(T) > _M_capacity) {
       resize((_M_size+1)*sizeof(T));
@@ -86,6 +93,11 @@ public:
     MewAssert(has(idx));
     return _M_data[idx];
   }
+  ////////////////////////////////////////////////////////////
+  T& at(size_t idx, size_t offset) const {
+    MewAssert(has(idx));
+    return *(T*)((void*)_M_data+((idx*sizeof(T))-((int)offset)));
+  }
 
   ////////////////////////////////////////////////////////////
   size_t get_real_idx(int idx) const noexcept {
@@ -101,6 +113,20 @@ public:
   ////////////////////////////////////////////////////////////
   T& at(int idx) const {
     return at(get_real_idx(idx));
+  }
+  ////////////////////////////////////////////////////////////
+  T& at(int idx, size_t offset) const {
+    if (offset == 0) {
+      return at(get_real_idx(idx));
+    }
+    return at(get_real_idx(idx), offset);
+  }
+
+  ////////////////////////////////////////////////////////////
+  byte* rat(int offset) const {
+    MewAssert(_M_size+offset >= 0);
+    MewAssert(_M_size+offset < _M_size);
+    return (byte*)(_M_data+offset);
   }
 
   ////////////////////////////////////////////////////////////
@@ -128,23 +154,34 @@ public:
     upsize_if_needs();
     T* pointer = _M_data+(_M_size*sizeof(T));
     memcpy(pointer, &value, sizeof(value));
-    _M_size++;
+    ++_M_size;
     return _M_size-1;
   }
   ////////////////////////////////////////////////////////////
   size_t push(T* value) {
     upsize_if_needs();
-    void* pointer = _M_data+(_M_size*sizeof(T));
+    void* pointer = (void*)_M_data+(_M_size*sizeof(T));
     memcpy(pointer, value, sizeof(T));
-    _M_size++;
+    ++_M_size;
     return _M_size-1;
   }
   ////////////////////////////////////////////////////////////
   size_t push(const T& value) {
     upsize_if_needs();
-    void* pointer = _M_data+(_M_size*sizeof(T));
+    void* pointer = (void*)_M_data+(_M_size*sizeof(T));
     memcpy(pointer, &value, sizeof(value));
-    _M_size++;
+    ++_M_size;
+    return _M_size-1;
+  }
+
+  ////////////////////////////////////////////////////////////
+  size_t push(const T& value, size_t offset) {
+    upsize_if_needs(offset);
+    void* pointer = (void*)(_M_data-offset)+(_M_size*sizeof(T));
+    memcpy(pointer, &value, sizeof(value));
+    if (offset == 0) {
+      ++_M_size;
+    }
     return _M_size-1;
   }
 
@@ -154,19 +191,29 @@ public:
     upsize_if_needs();
     T* value = new T(args...);
     memcpy(_M_data+(_M_size*sizeof(T)), value, sizeof(T));
-    _M_size++;
+    ++_M_size;
     return _M_size-1;
   }
 
   ////////////////////////////////////////////////////////////
-  T top() {
-    return at(-1);
+  T top(size_t offset = 0) {
+    return at(-1, offset);
   }
 
   ////////////////////////////////////////////////////////////
   T pop() {
     T t = top();
     _M_size -= 1;
+    return t;
+  }
+
+  ////////////////////////////////////////////////////////////
+  template<typename K>
+  K npop() {
+    MewUserAssert(_M_size >= sizeof(K), "too more sizeof(K)");
+    K t = 0;
+    memcpy(&t, &at(-1)-sizeof(K), sizeof(K));
+    _M_size -= sizeof(K);
     return t;
   }
 

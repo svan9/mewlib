@@ -24,6 +24,11 @@ namespace mew {
     std::ifstream test(path);
     return !(!test);
   }
+
+  inline bool is_exists(const std::string& name) {
+    std::ifstream f(name.c_str());
+    return f.good();
+  }
   
   const char* executable_name() {
   #if defined(PLATFORM_POSIX) || defined(__linux__) //check defines for your setup
@@ -47,7 +52,7 @@ namespace mew {
     char** end = args+(argc*sizeof(*args));
     while (begin != end) {
       char* arg = *(begin++);
-      if (strcmp(arg, (char*)exec_name, strlen(exec_name)) == 1) {
+      if (strcmp(arg, (char*)exec_name, strlen(exec_name)) == 0) {
         return begin;
       }
     }
@@ -57,16 +62,61 @@ namespace mew {
   template<size_t N>
   void SkipToExec(mew::stack<char*, N>& _line) {
     const char* exec_name = executable_name(); 
-    char** begin = _line.data();
-    char** end = begin+(_line.size());
-    while (begin != end) {
-      _line++;
-      char* arg = *(begin++);
-      if (strcmp(arg, (char*)exec_name, strlen(exec_name)) == 1) {
+    for (int i = 0; i < _line.size(); ++i) {
+      char* arg = _line[i];
+      if (strcmp(arg, (char*)exec_name, strlen(exec_name)) == 0) {
+        _line.erase(0, i);
         break;
       }
     }
   }
+
+  HANDLE run_cmd_async(char* items) {
+    STARTUPINFO siStartInfo;
+    ZeroMemory(&siStartInfo, sizeof(siStartInfo));
+    siStartInfo.cb = sizeof(STARTUPINFO);
+    // TODO: check for errors in GetStdHandle
+    siStartInfo.hStdError  = GetStdHandle(STD_ERROR_HANDLE);
+    siStartInfo.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+    siStartInfo.hStdInput  = GetStdHandle(STD_INPUT_HANDLE);
+    siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
+
+    PROCESS_INFORMATION piProcInfo;
+    ZeroMemory(&piProcInfo, sizeof(PROCESS_INFORMATION));
+    BOOL bSuccess = CreateProcessA(NULL, items, NULL, NULL, TRUE, 0, NULL, NULL, &siStartInfo, &piProcInfo);
+    CloseHandle(piProcInfo.hThread);
+    return piProcInfo.hProcess;
+  }
+
+  size_t run_cmd_sync(char* cmd) {
+    HANDLE hProcess = run_cmd_async(cmd);
+    WaitForSingleObject(hProcess, INFINITE);
+
+    DWORD exitCode;
+    GetExitCodeProcess(hProcess, &exitCode);
+    CloseHandle(hProcess);
+
+    return exitCode;
+  }
+  std::string run_cmd_get_output(const char* cmd) {
+    std::string result;
+    char buffer[128];
+    FILE* pipe = _popen(cmd, "r");
+    if (!pipe) {
+      throw std::runtime_error("popen() failed!");
+    }
+    try {
+      while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
+        result += buffer;
+      }
+    } catch (...) {
+      _pclose(pipe);
+      throw;
+    }
+    _pclose(pipe);
+    return result;
+  }
+
 
   class args {
   private:
@@ -77,7 +127,7 @@ namespace mew {
 
     ////////////////////////////////////////////////////////////
     void normalize()  {
-      SkipToExec(_M_args.size(), _M_args.data());
+      SkipToExec(_M_args);
     }
 
     ////////////////////////////////////////////////////////////
@@ -139,6 +189,15 @@ namespace mew {
     ////////////////////////////////////////////////////////////
     bool has_needs(size_t needs_count) const noexcept {
       return _M_args.size() >= needs_count;
+    }
+    
+    ////////////////////////////////////////////////////////////
+    void print() {
+      printf("{ |%llu|", _M_args.size());
+      for (int i = 0; i < _M_args.size(); ++i) {
+        printf("[%s]", _M_args[i]);
+      }
+      printf(" }\n");
     }
   };
 
