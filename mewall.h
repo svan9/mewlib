@@ -25,6 +25,7 @@
 #include "mewfeature.hpp"
 #include "mewbinary.hpp"
 #include "mewvector.hpp"
+#include "mewnmath.hpp"
 
 namespace Tests {
 	inline void test_mew_stack() {
