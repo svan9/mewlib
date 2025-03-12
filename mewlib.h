@@ -252,24 +252,27 @@ namespace mew {
 		auto ref = __path.string();
 		return scopy(ref.c_str(), ref.size());
 	}
-
-	int strcmp(char* s, char* m, size_t size) {
-		for (int i = 0; i < size; ++i) {
-			if (s[i] != m[i]) {
-				return 0;
-			}
-		}
-		return 1;
-	}
 	
-	int strcmp(const char* s, const char* m, size_t size) {
+	bool strcmp(const char* s, const char* m, size_t size) {
 		for (int i = 0; i < size; ++i) {
 			if (s[i] != m[i]) {
-				return 0;
+				return false;
 			}
 		}
-		return 1;
+		return true;
 	}
+	bool strcmp(const char* s, const char* m) {
+		size_t s1 = strlen(s);
+		size_t s2 = strlen(m);
+		if (s1 != s2) return false;
+		for (int i = 0; i < s1; ++i) {
+			if (s[i] != m[i]) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 #endif	
 }
 

@@ -1,5 +1,5 @@
-#ifndef MEW_ALLOC_LIB_SO2U
-#define MEW_ALLOC_LIB_SO2U
+#ifndef MEW_BIN_LIB_SO2U
+#define MEW_BIN_LIB_SO2U
 
 #include "mewlib.h"
 #include "mewstack.hpp"

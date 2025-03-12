@@ -14,7 +14,7 @@
 #include <fstream>
 #ifdef _WIN32
   #include <windows.h>
-  #include <libloaderapi.h>
+  // #include <libloaderapi.h>
 #endif
 
 namespace mew {

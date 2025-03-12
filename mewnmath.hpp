@@ -48,11 +48,11 @@ namespace mew::nmath {
 	template<size_t size, typename T>
 	nvec<size, T> add(const nvec<size, T>& l, const nvec<size, T>& r) {
 		nvec<size, T> num = {0};
-		u32 r = 0;
+		ui32 rem = 0;
 		for (size_t i = 0; i < size; ++i) {
-			num.value[i] = (T)sadd((ui32)l.value[i], (ui32)r.value[i], &r);
-			num.value[i] += r;
-			r = 0;
+			num.value[i] = (T)sadd((ui32)l.value[i], (ui32)r.value[i], &rem);
+			num.value[i] += rem;
+			rem = 0;
 		}
 	}
 

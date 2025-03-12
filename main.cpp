@@ -1,5 +1,6 @@
 #include "mewall.h"
 #include "mewalloc.hpp"
+#include "mewxml.hpp"
 
 int main() {
 	using namespace mew;

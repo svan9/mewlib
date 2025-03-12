@@ -350,6 +350,14 @@ public:
     return tmp;
   }
 
+  typedef void(*each_fn)(T&, size_t);
+  
+  ////////////////////////////////////////////////////////////
+  void each(each_fn it_fn) {
+    for (int i = 0; i < size(); ++i) {
+      it_fn(at(i), i);
+    }
+  }
 };
 
 }

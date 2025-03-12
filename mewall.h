@@ -26,8 +26,9 @@
 #include "mewbinary.hpp"
 #include "mewvector.hpp"
 #include "mewnmath.hpp"
+#include "mewarena.hpp"
 
-namespace Tests {
+namespace mew::test {
 	inline void test_mew_stack() {
 		mew::stack<int> __stack;
 		__stack.push(9);
@@ -108,6 +109,10 @@ namespace Tests {
 		MewTest(__stack.size(), 5U);
 		__stack.clear();
 		MewTest(__stack.size(), 0U);
+	}
+
+	inline void test_mew_arena() {
+
 	}
 };
 
