@@ -53,22 +53,37 @@ mew::stack<const char*>* splitLines(const char* str, bool trim_lines = true) {
 }
 
 char* str_separate(const char* str, size_t size) {
-  char* result = scopy(str, size+2);
-  for (int i = 0; i < size; ++i) {
+  using namespace mew::string;
+  StringBuilder sb;
+  char* result;
+  for (size_t i = 0; i < size; ++i) {
     // skip strings
     if (str[i] == '\"') {
+      sb += str[i];
       ++i; // skip current
-      for (;i < size || (str[i] == '\"' && str[i-1] != '\\'); ++i) {}
-    }
-    // mark spaces
+      for (; i < size && (str[i] != '\"' || str[i - 1] == '\\'); ++i) {
+        sb += str[i];
+      }
+      sb += str[i];
+    } else 
+    if (std::ispunct(str[i]) && str[i] != '_') {
+      sb.Append('\0', true);
+      sb += str[i];
+      sb.Append('\0', true);
+    } else
+    // mark spaces and symbols
     if (std::isspace(str[i])) {
-      result[i] = '\0';
+      sb.Append('\0', true);
+    } else {
+      sb += str[i];
     }
   }
-  result[size] = '\0';
-  result[size+1] = '\1';
-  return result;
+  sb += '\0';
+  sb += '\1';
+  char* ostr = scopy((char*)sb.c_str(), sb.size()+1);
+  return ostr;
 }
+
 char* str_separate(const char* str) {
   return str_separate(str, strlen(str));
 }
