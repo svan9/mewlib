@@ -124,12 +124,54 @@ char* scopy(const char* str, size_t len) {
 	out[len] = '\0';
 	return out;
 }
+void* rcopy(void* ptr, size_t len) {
+	void* out = (char*)malloc(len);
+	memcpy(out, ptr, len);
+	return out;
+}
+
+char getLastChar(const char* str) {
+	size_t len = strlen(str);
+	if (len == 0) {
+		return '\0'; // or handle empty string case as needed
+	}
+	return str[len - 1];
+}
+
+char* strtrim(const char* str, size_t size) {
+	const char* end;
+	size_t out_size;
+
+	// Trim leading space
+	while (isspace((unsigned char)*str)) str++;
+
+	if (*str == 0)  // All spaces?
+		return scopy("", 0);
+
+	// Trim trailing space
+	end = str + size - 1;
+	while (end > str && isspace((unsigned char)*end)) end--;
+	end++;
+
+	// Set output size to minimum of trimmed string length and buffer size minus 1
+	out_size = end - str;
+
+	return scopy(str, out_size);
+}
+
+char* strtrim(const char* str) {
+	return strtrim(str, strlen(str));
+}
 
 char* scopy(const char* str) {
 	return scopy(str, strlen(str));
 }
 
 #ifdef __cplusplus
+template<typename T>
+T* tmalloc() {
+	return (T*)(malloc(sizeof(T)));
+}
 	#define MewPrintError(_error) printf("\nErrored from %s:%i at function `%s(...)`\n\twhat: %s", __FILE__, __LINE__, __func__, (_error).what());
 
 	#include <string>

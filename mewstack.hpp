@@ -158,18 +158,19 @@ public:
     return _M_size-1;
   }
   ////////////////////////////////////////////////////////////
-  size_t push(T* value) {
-    upsize_if_needs();
-    void* pointer = (void*)_M_data+(_M_size*sizeof(T));
-    memcpy(pointer, value, sizeof(T));
-    ++_M_size;
-    return _M_size-1;
-  }
-  ////////////////////////////////////////////////////////////
   size_t push(const T& value) {
     upsize_if_needs();
     void* pointer = (void*)_M_data+(_M_size*sizeof(T));
     memcpy(pointer, &value, sizeof(value));
+    ++_M_size;
+    return _M_size-1;
+  }
+
+  ////////////////////////////////////////////////////////////
+  size_t push(T* ptr) {
+    upsize_if_needs();
+    void* pointer = (void*)_M_data+(_M_size*sizeof(T));
+    memcpy(pointer, ptr, sizeof(T));
     ++_M_size;
     return _M_size-1;
   }
@@ -193,6 +194,46 @@ public:
     memcpy(_M_data+(_M_size*sizeof(T)), value, sizeof(T));
     ++_M_size;
     return _M_size-1;
+  }
+  ////////////////////////////////////////////////////////////
+  size_t insert(const T& value, size_t idx) {
+    if (idx > _M_size) {
+      return push(value);
+    }
+    upsize_if_needs();
+    void* start = (void*)(_M_data)+((idx)*sizeof(T));
+    void* end = (void*)(_M_data)+((idx+1)*sizeof(T));
+    size_t left_size = (_M_size-idx)*sizeof(T);
+    memmove(end, start, left_size);
+    memcpy(start, &value, sizeof(T));
+    return idx+1;
+  }
+  
+  ////////////////////////////////////////////////////////////
+  size_t insert(T&& value, size_t idx) {
+    if (idx > _M_size) {
+      return push(value);
+    }
+    upsize_if_needs();
+    void* start = (void*)(_M_data)+((idx)*sizeof(T));
+    void* end = (void*)(_M_data)+((idx+1)*sizeof(T));
+    size_t left_size = (_M_size-idx)*sizeof(T);
+    memmove(end, start, left_size);
+    memcpy(start, &value, sizeof(T));
+    return idx+1;
+  }
+
+  ////////////////////////////////////////////////////////////
+  stack<T, alloc_size>* copy() {
+    stack<T, alloc_size>* ptr = tmalloc<stack<T, alloc_size>>();
+    ptr->_M_capacity = _M_capacity;
+    ptr->_M_data = copy_data();
+    ptr->_M_size = _M_size;
+    return ptr;
+  }
+  
+  T* copy_data() {
+    return rcopy(_M_data, _M_size*sizeof(T));
   }
 
   ////////////////////////////////////////////////////////////

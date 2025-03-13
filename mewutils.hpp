@@ -9,6 +9,7 @@
 #define MEW_UTILS_LIB_SO2U
 #include "mewlib.h"
 #include "mewstack.hpp"
+#include "mewstring.hpp"
 
 namespace mew::utils {
 
@@ -25,8 +26,34 @@ const char* getUserHome(const char* next_path) {
   return a;
 }
 
+mew::stack<const char*>* splitLines(const char* str, bool trim_lines = true) {
+  using namespace mew::string;
+  auto lines = new mew::stack<const char*>();
+  size_t size = strlen(str);
+  const char* line_begin = str;
+  size_t line_size = 0;
+  for (size_t i = 0; i < size; ++i) {
+    if (CharInString("\n", str[i])) {
+      while(CharInString("\n", str[i+1])) { ++i; ++line_size; }
+      const char* cs = scopy(line_begin, line_size+1);
+      if (trim_lines) {
+        cs = strtrim(cs);
+      }
+      lines->push(cs);
+      line_begin = str + i++ + 1;
+      line_size = 0;
+    } else {
+      ++line_size;
+    }
+  }
+  if (line_size > 0) {
+    lines->push(scopy(line_begin, line_size));
+  }
+  return lines;
+}
+
 char* str_separate(const char* str, size_t size) {
-  char* result = scopy(result, size+1);
+  char* result = scopy(str, size+2);
   for (int i = 0; i < size; ++i) {
     // skip strings
     if (str[i] == '\"') {
@@ -38,7 +65,8 @@ char* str_separate(const char* str, size_t size) {
       result[i] = '\0';
     }
   }
-  result[size] = '\1';
+  result[size] = '\0';
+  result[size+1] = '\1';
   return result;
 }
 char* str_separate(const char* str) {
@@ -46,9 +74,11 @@ char* str_separate(const char* str) {
 }
 
 char* shift_word(char* separeted) {
+  if (separeted == nullptr) return nullptr;
   char* begin = separeted;
-  while (*++begin != '\0') { if (*begin == '\1') {return nullptr;} }
-  return begin;
+  while (*++begin != '\0') { }
+  ++begin;
+  return *begin == '\1' ? nullptr: begin;
 }
 
 char* str_to_str(const char* separeted) {
@@ -108,6 +138,47 @@ double str_to_double(const char* str, bool& success) {
     return 0.0;
   }
 }
+
+class TokenRow {
+private: 
+  char* m_sequence;
+public: 
+  TokenRow() {}
+  TokenRow(const char* str): m_sequence(str_separate(str)) {}
+  TokenRow(TokenRow& tr): m_sequence(tr.m_sequence) {}
+
+  void config(const char* str) {
+    m_sequence = str_separate(str);
+  }
+
+  void print() {
+    TokenRow tmp(*this);
+    char* w = *tmp;
+    while((w = *tmp++) != nullptr) {
+      printf("\"%s\" ", w);
+    }
+  }
+
+  char* operator*() {
+    return m_sequence;
+  }
+
+  TokenRow& operator++() {
+    m_sequence = shift_word(m_sequence);
+    return *this;
+  }
+
+  TokenRow operator++(int) {
+    TokenRow tmp(*this);
+    ++*this;
+    return tmp;
+  }
+
+  bool same(const char* str) {
+    return strcmp(m_sequence, str);
+  }
+};
+
 
 };
 
