@@ -52,6 +52,27 @@ mew::stack<const char*>* splitLines(const char* str, bool trim_lines = true) {
   return lines;
 }
 
+char* str_parse(const char* str, size_t size) {
+  using namespace mew::string;
+  StringBuilder sb;
+  for (size_t i = 0; i < size; ++i) {
+    if (i+1 < size && str[i] == '\\' && str[i+1] == '\\') {
+      sb += '\\'; ++i;
+    } else 
+    if (i+1 < size && str[i] == '\\' && str[i+1] == 'n') {
+      sb += '\n'; ++i;
+    } else 
+    if (i+1 < size && str[i] == '\\' && str[i+1] == 't') {
+      sb += '\t'; ++i;
+    } else 
+    if (i+1 < size && str[i] == '\\' && str[i+1] == '0') {
+      sb += '\0'; ++i;
+    } else sb.Append(str[i]);
+  }
+  char* ostr = scopy((char*)sb.c_str(), sb.size()+1);
+  return ostr;
+}
+
 char* str_separate(const char* str, size_t size) {
   using namespace mew::string;
   StringBuilder sb;

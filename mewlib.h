@@ -269,6 +269,27 @@ namespace mew {
 	template<typename T>
 	void readBytes(std::ifstream& file, T& out) {
 		file.read(reinterpret_cast<char*>(&out), sizeof(out));
+	}	
+	template<typename T>
+	void writeBytes(std::ofstream& file, const T& content) {
+		file.write((char*)(&content), sizeof(content));
+	}
+
+	template<typename T>
+	void writeBytes(std::ofstream& file, const T& content, size_t size) {
+		file.write((char*)(&content), size);
+	}
+
+	template<typename T>
+	void writeBytes(std::ofstream& file, T&& content) {
+		file.write((char*)(&content), sizeof(content));
+	}
+
+	template<typename T>
+	void writeSeqBytes(std::ofstream& file, T* content, size_t size) {
+		for (int i = 0; i < size; ++i) {
+			writeBytes(file, content[i]);
+		}
 	}
 
 	std::ifstream getIfStream(const char* dir, const char* file) {

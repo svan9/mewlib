@@ -111,6 +111,19 @@ public:
   }
 
   ////////////////////////////////////////////////////////////
+  size_t rget_real_idx_AT(int idx) const noexcept {
+    if (idx == 0) {
+      return 0;
+    }
+    int real_idx;
+    int ssize = _M_size*sizeof(T);
+    // real_idx = mod(idx, (int)ssize);
+    real_idx = ((int)ssize + idx);
+    real_idx = real_idx % ssize;
+    return real_idx;
+  }
+
+  ////////////////////////////////////////////////////////////
   T& at(int idx) const {
     return at(get_real_idx(idx));
   }
@@ -124,9 +137,12 @@ public:
 
   ////////////////////////////////////////////////////////////
   byte* rat(int offset) const {
-    MewAssert(_M_size+offset >= 0);
-    MewAssert(_M_size+offset < _M_size);
-    return (byte*)(_M_data+offset);
+    const size_t max_limit = (_M_size*sizeof(T));
+    const size_t idx = (_M_size*sizeof(T))+offset;
+    MewAssert(idx >= 0);
+    MewAssert(idx < max_limit);
+    const size_t real_idx = rget_real_idx_AT(offset);
+    return (byte*)(_M_data+real_idx);
   }
 
   ////////////////////////////////////////////////////////////
