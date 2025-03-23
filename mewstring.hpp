@@ -46,7 +46,7 @@ namespace string {
 		std::unique_ptr<char[]> buffer;
 		size_t length;
 		size_t capacity;
-
+			
 		void EnsureCapacity(size_t newCapacity) {
 			if (newCapacity > capacity) {
 				capacity = newCapacity;
@@ -57,13 +57,15 @@ namespace string {
 				buffer.swap(newBuffer);
 			}
 		}
-
+			
 	public:
 		StringBuilder() : length(0), capacity(16) {
-			buffer.reset(new char[capacity]);
+			char* ptr = new (std::nothrow) char[capacity];
+			MewAssert(ptr);
+			buffer.reset(ptr);
 			buffer[0] = '\0';
 		}
-
+			
 		StringBuilder& Insert(size_t pos, const char* str) {
 			size_t strLen = strlen(str);
 			if (pos > length) {
@@ -75,7 +77,7 @@ namespace string {
 			length += strLen;
 			return *this;
 		}
-
+			
 		StringBuilder& Append(const char* str) {
 			size_t strLen = strlen(str);
 			EnsureCapacity(length + strLen + 1);
@@ -84,54 +86,57 @@ namespace string {
 			buffer[length] = '\0';
 			return *this;
 		}
-		
+			
 		StringBuilder& Append(char c, bool replace = false) {
-			char last = buffer.get()[length-1];
-			if (replace && last == c) return *this;
+			if (length > 0 && replace && buffer[length - 1] == c) {
+				return *this;
+			}
 			EnsureCapacity(length + 2);
 			buffer[length++] = c;
 			buffer[length] = '\0';
 			return *this;
 		}
-
+			
 		StringBuilder& AppendFormat(const char* format, ...) {
 			va_list args;
 			va_start(args, format);
 			size_t size = vsnprintf(nullptr, 0, format, args) + 1;
 			va_end(args);
-
+			
 			EnsureCapacity(length + size);
 			va_start(args, format);
 			vsnprintf(buffer.get() + length, size, format, args);
 			va_end(args);
-
+			
 			length += size - 1;
 			return *this;
 		}
-
-		const char* c_str() const {
-			return buffer.get();
+			
+		char* c_str() {
+			char* result = new char[length + 1];
+			memcpy(result, buffer.get(), length + 1);
+			return result;
 		}
-
+			
 		void Clear() {
 			length = 0;
 			if (buffer) {
 				buffer[0] = '\0';
 			}
 		}
-		
+			
 		StringBuilder& operator+=(const char* c) {
 			return Append(c);
 		}
-
+			
 		StringBuilder& operator+=(char c) {
 			return Append(c);
 		}
-
+			
 		friend StringBuilder& operator+(StringBuilder& l, char r) {
 			return l.Append(r);
 		}
-
+			
 		size_t size() const {
 			return length;
 		}

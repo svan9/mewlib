@@ -52,7 +52,7 @@ namespace mew {
     char** end = args+(argc*sizeof(*args));
     while (begin != end) {
       char* arg = *(begin++);
-      if (strcmp(arg, (char*)exec_name, strlen(exec_name)) == 0) {
+      if (mew::strcmp(arg, (char*)exec_name, strlen(exec_name))) {
         return begin;
       }
     }
@@ -64,8 +64,8 @@ namespace mew {
     const char* exec_name = executable_name(); 
     for (int i = 0; i < _line.size(); ++i) {
       char* arg = _line[i];
-      if (strcmp(arg, (char*)exec_name, strlen(exec_name)) == 0) {
-        _line.erase(0, i);
+      if (mew::strcmp(arg, exec_name)) {
+        _line.shift();
         break;
       }
     }
@@ -123,16 +123,24 @@ namespace mew {
     mew::stack<char*, 8U> _M_args;
   public:
     ////////////////////////////////////////////////////////////
-    args(int argc, char** argv): _M_args(argv, argc) {}
-
+    args(int argc, char** argv): _M_args(argv, argc) {
+    }
+    
     ////////////////////////////////////////////////////////////
     void normalize()  {
       SkipToExec(_M_args);
+      // _M_args.print((mew::stack<char*, 8U>::printer)puts);
     }
 
     ////////////////////////////////////////////////////////////
     bool has(const char* element) const noexcept {
-      return -1 != _M_args.indexOf((char*)element);
+      for (int i = 0; i < _M_args.size(); ++i) {
+        char* e = _M_args.at(i);
+        if (mew::strcmp(e, element)) {
+          return true;
+        }
+      }
+      return false;
     }
 
     ////////////////////////////////////////////////////////////
@@ -161,7 +169,7 @@ namespace mew {
       size_t length = strlen(start);
       for (int i = 0; i < _M_args.size(); ++i) {
         char* e = _M_args.at(i);
-        if (0 == memcmp(e, start, length)) {
+        if (mew::memcmp(e, start, length)) {
           return e+length;
         }
       }
@@ -174,7 +182,7 @@ namespace mew {
       mew::stack<char*, 8U> all;
       for (int i = 0; i < _M_args.size(); ++i) {
         char* e = _M_args.at(i);
-        if (0 == memcmp(e, start, length)) {
+        if (mew::memcmp(e, start, length)) {
           all.push(e+length);
         }
       }

@@ -17,6 +17,17 @@
 #include <future>
 
 namespace mew {
+	bool rmemcmp(byte* a, byte* b, size_t size) {
+		for (int i = 0; i < size; ++i) {
+			if (a[i] != b[i]) return false;
+		}
+		return true;
+	}
+	template<typename T, typename K>
+	bool memcmp(T* a, K* b, size_t size) {
+		return rmemcmp((byte*)a, (byte*)b, size);
+	}
+
 	void _itoa10(int _Value, char *_Dest) {
 		snprintf(_Dest, sizeof(_Dest), "%d", _Value);
 	}

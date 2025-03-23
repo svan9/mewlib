@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <!-- Visualization for mew::stack with two template parameters -->
+  <Type Name="mew::stack&lt;*&gt;">
+    <DisplayString>{size = {_M_size}}</DisplayString>
+    <Expand>
+      <!-- <Item Name="Elements"> -->
+				<ArrayItems>
+					<Size>_M_size</Size>
+					<ValuePointer>_M_data</ValuePointer>
+				</ArrayItems>
+			<!-- </Item> -->
+    </Expand>
+  </Type>
+
+  <Type Name="Virtual::Code">
+    <DisplayString>{code_size = {capacity}}</DisplayString>
+    <Expand>
+        <Item Name="code">
+          <ArrayItems>
+            <Size>capacity</Size>
+            <ValuePointer>playground</ValuePointer>
+          </ArrayItems>
+        </Item>
+        <Item Name="code size">capacity</Item>
+        <Item Name="data size">data_size</Item>
+        <Item Name="data">data</Item>
+    </Expand>
+  </Type>
+</AutoVisualizer>

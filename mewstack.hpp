@@ -11,6 +11,7 @@
 #include "mewlib.h"
 #include "mewmath.hpp"
 #include "mewiterator.hpp"
+#include <string.h>
 
 namespace mew {
 
@@ -146,11 +147,13 @@ public:
   }
 
   ////////////////////////////////////////////////////////////
+  _GLIBCXX20_CONSTEXPR
   T& operator[](int idx) {
     return at(idx);
   }
 
   ////////////////////////////////////////////////////////////
+  _GLIBCXX20_CONSTEXPR
   const T& operator[](int idx) const {
     return at(idx);
   }
@@ -290,7 +293,7 @@ public:
   
   ////////////////////////////////////////////////////////////
   void erase(int idx) {
-    erase(get_real_idx(idx));
+    erase(get_real_idx(idx), 1);
   }
 
   ////////////////////////////////////////////////////////////
@@ -320,7 +323,7 @@ public:
   size_t indexOf(const T& value) const {
     for (int i = 0; i < _M_size; ++i) {
       T& cur_el = _M_data[i];
-      if (0 == memcmp(&value, &cur_el, sizeof(T))) {
+      if (mew::memcmp(&value, &cur_el, sizeof(T))) {
         return i;
       }
     }
@@ -331,11 +334,17 @@ public:
   size_t indexOf(T&& value) const {
     for (int i = 0; i < _M_size; ++i) {
       T& cur_el = _M_data[i];
-      if (0 == memcmp(&value, &cur_el, sizeof(T))) {
+      if (mew::memcmp(&value, &cur_el, sizeof(T))) {
         return i;
       }
     }
     return (size_t)(-1);
+  }
+  
+  ////////////////////////////////////////////////////////////
+  void shift() {
+    memmove((void*)_M_data, (void*)_M_data + sizeof(T), sizeof(T)*(_M_size-1));
+    _M_size -= 1;
   }
 
   ////////////////////////////////////////////////////////////
@@ -408,11 +417,19 @@ public:
   }
 
   typedef void(*each_fn)(T&, size_t);
+  typedef void(*printer)(T);
   
   ////////////////////////////////////////////////////////////
   void each(each_fn it_fn) {
     for (int i = 0; i < size(); ++i) {
       it_fn(at(i), i);
+    }
+  }
+  
+  ////////////////////////////////////////////////////////////
+  void print(printer p) {
+    for (int i = 0; i < size(); ++i) {
+      p((*this)[i]);
     }
   }
 };

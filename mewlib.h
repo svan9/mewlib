@@ -167,6 +167,23 @@ char* scopy(const char* str) {
 	return scopy(str, strlen(str));
 }
 
+const char* btoi(bool b) {
+	return b ? "true" : "false";
+}
+
+const char* ValueOrDefault(const char* v, const char* d) {
+	if (v) return v;
+	return d;
+}
+
+#ifdef __cplusplus
+#define readonly(__type) const (__type) &
+#define nonull(__v) ((__v)!=nullptr)
+#else
+#define readonly(__type) (__type)
+#define nonull(__v) ((__v)!=NULL)
+#endif
+
 #ifdef __cplusplus
 template<typename T>
 T* tmalloc() {
@@ -243,6 +260,7 @@ namespace mew {
 			out.append(buf, 0, file.gcount());
     }
 		out.append(buf, 0, file.gcount());
+		file.close();
 		return out;
 	}
 
@@ -252,6 +270,11 @@ namespace mew {
       __path = std::filesystem::absolute(__path.lexically_normal());
     }
     return ReadFile(__path);
+	}
+
+	const char* ReadFullFile(const char* path) {
+		std::string content = ReadFile(path);
+		return scopy(content.c_str(), content.size());
 	}
 
 	std::ifstream getIfStream(std::filesystem::path& path) {

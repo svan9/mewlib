@@ -10,8 +10,27 @@
 #include "mewlib.h"
 #include "mewstack.hpp"
 #include "mewstring.hpp"
+#include <filesystem>
 
 namespace mew::utils {
+
+  template<typename T>
+  void faspp(T& lhr, T val) {
+    delete &lhr;
+    lhr = val;
+  }
+
+  template<typename T>
+  void fas(T& lhr, T val) {
+    free(&lhr);
+    lhr = val;
+  }
+
+  template<typename T>
+  void fas(T*& lhr, T* val) {
+    free(lhr);
+    lhr = val;
+  }
 
 const char* getUserHome() {
 #ifdef _WIN32
@@ -37,7 +56,7 @@ mew::stack<const char*>* splitLines(const char* str, bool trim_lines = true) {
       while(CharInString("\n", str[i+1])) { ++i; ++line_size; }
       const char* cs = scopy(line_begin, line_size+1);
       if (trim_lines) {
-        cs = strtrim(cs);
+        fas(cs, (const char*)strtrim(cs));
       }
       lines->push(cs);
       line_begin = str + i++ + 1;
@@ -47,7 +66,8 @@ mew::stack<const char*>* splitLines(const char* str, bool trim_lines = true) {
     }
   }
   if (line_size > 0) {
-    lines->push(scopy(line_begin, line_size));
+    const char* cs = strtrim(line_begin, line_size);
+    lines->push(cs);
   }
   return lines;
 }
@@ -176,15 +196,18 @@ double str_to_double(const char* str, bool& success) {
 }
 
 class TokenRow {
-private: 
-  char* m_sequence;
+private:
+  // free before
+  std::shared_ptr<char[]> m_sequence;
+  char* c_ptr;
 public: 
   TokenRow() {}
-  TokenRow(const char* str): m_sequence(str_separate(str)) {}
-  TokenRow(TokenRow& tr): m_sequence(tr.m_sequence) {}
+  TokenRow(const char* str): m_sequence(str_separate(str)),c_ptr(m_sequence.get()) {}
+  TokenRow(TokenRow& tr): m_sequence(tr.m_sequence),c_ptr(tr.c_ptr) {}
 
   void config(const char* str) {
-    m_sequence = str_separate(str);
+    m_sequence.reset(str_separate(str));
+    c_ptr = m_sequence.get();
   }
 
   void print() {
@@ -196,11 +219,11 @@ public:
   }
 
   char* operator*() {
-    return m_sequence;
+    return c_ptr;
   }
 
   TokenRow& operator++() {
-    m_sequence = shift_word(m_sequence);
+    c_ptr = shift_word(c_ptr);
     return *this;
   }
 
@@ -211,9 +234,18 @@ public:
   }
 
   bool same(const char* str) {
-    return strcmp(m_sequence, str);
+    return strcmp(c_ptr, str);
   }
+
+  
 };
+std::filesystem::path GetAbsPath(const char* path) { 
+  std::filesystem::path __path(path);
+  if (!__path.is_absolute()) {
+    __path = std::filesystem::absolute(__path.lexically_normal());
+  }
+  return __path;
+}
 
 
 };
