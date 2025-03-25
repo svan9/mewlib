@@ -27,6 +27,11 @@ public:
   }
 
   ////////////////////////////////////////////////////////////
+  T* begin() const noexcept{
+    return _M_data;
+  }
+
+  ////////////////////////////////////////////////////////////
   stack(T* _array, size_t _length): _M_capacity(sizeof(T)), _M_size(_length) {
     _M_data = (T*)malloc(_M_capacity);
     memcpy(_M_data, _array, sizeof(T)*_length);
