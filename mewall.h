@@ -7,6 +7,10 @@
 #ifndef __MEWLIB_ALL__
 #define __MEWLIB_ALL__
 
+#ifdef RAYLIB_H
+#define MEWALL_NO_WIN_ALIASES
+#endif
+
 #include "mewlib.h"
 #include "mewmath.hpp"
 #include "mewstack.hpp"
@@ -17,7 +21,7 @@
 #include "mewsmap.hpp"
 #include "mewiterator.hpp"
 #include "mewprint.hpp"
-#ifndef RAYLIB_H
+#ifndef MEWALL_NO_WIN_ALIASES
 #include "mewargs.hpp"
 #include "mewdll.hpp"
 #endif

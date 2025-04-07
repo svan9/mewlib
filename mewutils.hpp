@@ -159,7 +159,23 @@ char* str_to_str(const char* separeted) {
   return begin;
 }
 
+
+int hex_to_int(const char* str, bool& success) {
+  char* end;
+  long result = strtol(str, &end, 16);
+  if (*end == '\0') {
+    success = true;
+    return static_cast<int>(result);
+  } else {
+    success = false;
+    return 0;
+  }
+}
+
 int str_to_int(const char* str, bool& success) {
+  if (mew::starts_with(str, "0x")) {
+    return hex_to_int(str+2, success);
+  }
   char* end;
   long result = strtol(str, &end, 10);
   if (*end == '\0') {
