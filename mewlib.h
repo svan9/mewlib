@@ -272,9 +272,49 @@ namespace mew {
     return ReadFile(__path);
 	}
 
+	std::filesystem::path get_path(const char* path) {
+		std::filesystem::path __path(path);
+		if (!__path.is_absolute()) {
+			__path = std::filesystem::absolute(__path.lexically_normal());
+		}
+		return __path;
+	}
+
+	char* wcharToChar(const wchar_t* wstr) {
+		size_t len = wcslen(wstr);
+		size_t convertedLen = wcstombs(nullptr, wstr, 0);
+		if (convertedLen == (size_t)-1) {
+			return nullptr; // Conversion failed
+		}
+		char* cstr = (char*)malloc(convertedLen + 1);
+		wcstombs(cstr, wstr, convertedLen + 1);
+		return cstr;
+	}
+
+	const char* get_file_name(std::filesystem::path& path) {
+		return scopy(wcharToChar(path.filename().c_str()));
+	}
+
 	const char* ReadFullFile(const char* path) {
 		std::string content = ReadFile(path);
 		return scopy(content.c_str(), content.size());
+	}
+
+	const char* ReadFullFile(std::filesystem::path& path) {
+		std::string content = ReadFile(path);
+		return scopy(content.c_str(), content.size());
+	}
+
+	const char* ReadString(std::ifstream& file) {
+		std::string result;
+		char ch;
+		while (file.get(ch)) {
+			if (ch == '\0') {
+				break;
+			}
+			result += ch;
+		}
+		return scopy(result.c_str());
 	}
 
 	std::ifstream getIfStream(std::filesystem::path& path) {
@@ -292,20 +332,30 @@ namespace mew {
 	template<typename T>
 	void readBytes(std::ifstream& file, T& out) {
 		file.read(reinterpret_cast<char*>(&out), sizeof(out));
-	}	
+	}
+
+	template<typename T>
+	void readSeqBytes(std::ifstream& file, T* out, size_t size) {
+		file.read(reinterpret_cast<char*>(out), size);
+	}
+
+	template<typename T>
+	void writeBytes(std::ofstream& file, T& content, size_t size) {
+		file.write((char*)(&content), size);
+	}
+
 	template<typename T>
 	void writeBytes(std::ofstream& file, const T& content) {
 		file.write((char*)(&content), sizeof(content));
 	}
 
 	template<typename T>
-	void writeBytes(std::ofstream& file, const T& content, size_t size) {
-		file.write((char*)(&content), size);
+	void writeBytes(std::ofstream& file, T& content) {
+		file.write((char*)(&content), sizeof(content));
 	}
 
-	template<typename T>
-	void writeBytes(std::ofstream& file, T&& content) {
-		file.write((char*)(&content), sizeof(content));
+	void writeString(std::ofstream& file, const char* str) {
+		file.write(str, strlen(str)+1);
 	}
 
 	template<typename T>
@@ -357,6 +407,10 @@ namespace mew {
 			}
 		}
 		return true;
+	}
+
+	bool starts_with(const char* l, const char* m) {
+		return strcmp(l, m, strlen(m));
 	}
 
 #endif	
