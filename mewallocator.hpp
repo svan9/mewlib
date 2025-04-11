@@ -14,7 +14,7 @@ namespace mew {
 		AllocatorBase() {}
 		
 		AllocatorBase(size_t count) : _M_capacity(sizeof(T) * (count*alloc_size)), _M_size(0) {
-			_M_data = new T[(count*alloc_size)];
+			_M_data = new T*[(count*alloc_size)];
 		}
 
 		constexpr size_t AllocSize() const noexcept {
@@ -186,7 +186,7 @@ namespace mew {
 	}; 
 
 	template<typename T>
-	using Allocator = AllocatorBase<T, sizeof(T)>;
+	using Allocator = AllocatorBase<T, 1>;
 
 	template<typename T>
 	using MidAllocator = AllocatorBase<T, sizeof(T)*10>;

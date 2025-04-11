@@ -59,8 +59,7 @@ namespace mew {
     return nullptr;
   }
 
-  template<size_t N>
-  void SkipToExec(mew::stack<char*, N>& _line) {
+  void SkipToExec(mew::stack<char*>& _line) {
     const char* exec_name = executable_name(); 
     for (int i = 0; i < _line.size(); ++i) {
       char* arg = _line[i];

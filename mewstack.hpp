@@ -21,8 +21,7 @@ class stack {
 private:
   _Alloc _M_allocator;
 public:
-  ////////////////////////////////////////////////////////////
-  stack(): _M_allocator(1) {}
+  stack(): _M_allocator(1) {} // Initialize _M_capacity
   
   ////////////////////////////////////////////////////////////
   size_t size() const noexcept {
@@ -47,7 +46,6 @@ public:
   ////////////////////////////////////////////////////////////
   stack(stack<T>& ref): _M_allocator(ref._M_allocator) {}
 
-  ////////////////////////////////////////////////////////////
   stack(size_t size): _M_allocator(size) { }
 
   ////////////////////////////////////////////////////////////
@@ -66,8 +64,7 @@ public:
   
   ////////////////////////////////////////////////////////////
   void reserve(size_t size) {
-    if (size == 0) { return; }
-    resize((_M_capacity+size)*sizeof(T), true);
+    _M_allocator.reserve(size);
   }
 
   ////////////////////////////////////////////////////////////
@@ -78,13 +75,13 @@ public:
 
   ////////////////////////////////////////////////////////////
   T& at(size_t idx) const {
-    MewAssert(has(idx));
-    return _M_data[idx];
+  MewAssert(has(idx));
+  return data()[idx];
   }
   ////////////////////////////////////////////////////////////
   T& at(size_t idx, size_t offset) const {
     MewAssert(has(idx));
-    return *(T*)((void*)_M_data+((idx*sizeof(T))-((int)offset)));
+    return *(T*)((void*)data()+((idx*sizeof(T))-((int)offset)));
   }
 
   ////////////////////////////////////////////////////////////
@@ -167,25 +164,22 @@ public:
     return _M_allocator.count()-1;
   }
 
-  // ////////////////////////////////////////////////////////////
-  // size_t push(const T& value, size_t offset) {
-  //   upsize_if_needs(offset);
-  //   void* pointer = (void*)(_M_allocator.rbegin()-offset)+(_M_size*sizeof(T));
-  //   memcpy(pointer, &value, sizeof(value));
-  //   if (offset == 0) {
-  //     ++_M_size;
-  //   }
-  //   return _M_size-1;
-  // }
+  ////////////////////////////////////////////////////////////
+  size_t push(const T& value, size_t offset) {
+    if (offset == 0) {
+      return push(value);
+    }
+    void* pointer = (void*)(_M_allocator.rbegin()-offset)+size();
+    memcpy(pointer, &value, sizeof(value));
+    return _M_allocator.count()-1;
+  }
 
   ////////////////////////////////////////////////////////////
   template<typename ...Args>
-  size_t emplace(Args... args) {
-    upsize_if_needs();
-    T* value = new T(args...);
-    memcpy(_M_data+(_M_size*sizeof(T)), value, sizeof(T));
-    ++_M_size;
-    return _M_size-1;
+  size_t emplace(Args&&... args) {
+    T* pointer = _M_allocator.alloc();
+    new (pointer) T(std::forward<Args>(args)...);
+    return _M_allocator.count() - 1;
   }
 
   ////////////////////////////////////////////////////////////
@@ -207,6 +201,11 @@ public:
     stack<T>* ptr = new stack<T>();
     ptr->_M_allocator.copy(_M_allocator); 
     return ptr;
+  }
+  
+  ////////////////////////////////////////////////////////////
+  T* copy_data() {
+    return rcopy(_M_allocator.begin(), _M_allocator.size());
   }
   
   ////////////////////////////////////////////////////////////
@@ -304,12 +303,7 @@ public:
     if (indexOf(value) != (size_t)(-1)) {
       push(value);
     }
-  }
-  
-  ////////////////////////////////////////////////////////////
-  T* begin() const noexcept {
-    return _M_allocator.begin();
-  }
+}
   
   ////////////////////////////////////////////////////////////
   T* end() const noexcept {
@@ -317,14 +311,14 @@ public:
   }
 
   ////////////////////////////////////////////////////////////
-  friend bool operator==(stack<T,alloc_size>& st, std::initializer_list<T> list) {
+  friend bool operator==(stack<T, _Alloc>& st, std::initializer_list<T> list) {
     auto a = memcmp(st.begin(), list.begin(), st.size());
     return (st.count() == list.size()) && 
-      (0 == memcmp(st._M_data, list.begin(), st.size()));
+      (0 == memcmp(st.begin(), list.begin(), st.size()));
   }
 
   ////////////////////////////////////////////////////////////
-  friend bool operator!=(stack<T,alloc_size>& st, std::initializer_list<T> list) {
+  friend bool operator!=(stack<T, _Alloc>& st, std::initializer_list<T> list) {
     return (st.count() != list.size()) || 
       (0 != memcmp(st.begin(), list.begin(), st.size()));
   }

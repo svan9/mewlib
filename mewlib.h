@@ -336,7 +336,7 @@ namespace mew {
 
 	template<typename T>
 	void readSeqBytes(std::ifstream& file, T* out, size_t size) {
-		file.read(reinterpret_cast<char*>(out), size);
+		file.read((char*)(out), size);
 	}
 
 	template<typename T>

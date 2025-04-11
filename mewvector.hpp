@@ -231,7 +231,6 @@ namespace mew {
 
 		union {
 			struct { T x, y; };
-			struct { self_type xy};
 		};
 
 		self_type& operator+=(const self_type& l) {

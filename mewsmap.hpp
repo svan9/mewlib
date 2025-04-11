@@ -13,7 +13,7 @@
 
 namespace mew {
 
-template<typename Key, typename Val, size_t alloc_size = 1U>
+template<typename Key, typename Val>
 class simple_map {
 public:
   struct pair {
@@ -21,7 +21,7 @@ public:
     Val v;
   };
 private:
-  mew::stack<pair, alloc_size> _M_elements;
+  mew::stack<pair> _M_elements;
 public:
   ////////////////////////////////////////////////////////////
   simple_map() {}

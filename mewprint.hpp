@@ -17,8 +17,8 @@
 
 
 ////////////////////////////////////////////////////////////
-template<typename T, size_t asize>
-std::ostream& operator<<(std::ostream& os, const mew::stack<T, asize> &as) {
+template<typename T>
+std::ostream& operator<<(std::ostream& os, const mew::stack<T> &as) {
   os << "{ ";
   for (size_t i = 0U; i < as.size(); ++i) {
     os << as[i] << ", ";

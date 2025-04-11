@@ -4,7 +4,7 @@
  * - Git: https://github.com/svan9/mewlib
  **************************************************/
 
-
+#if false
 #ifndef MEW_FEATURE_LIB_SO2U
 #define MEW_FEATURE_LIB_SO2U
 #include <initializer_list>
@@ -134,4 +134,5 @@ namespace mew {
   };
 };
 
+#endif
 #endif
