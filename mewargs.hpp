@@ -120,7 +120,7 @@ namespace mew {
 
   class args {
   private:
-    mew::stack<char*, 8U> _M_args;
+    mew::stack<char*> _M_args;
   public:
     ////////////////////////////////////////////////////////////
     args(int argc, char** argv): _M_args(argv, argc) {
@@ -129,7 +129,7 @@ namespace mew {
     ////////////////////////////////////////////////////////////
     void normalize()  {
       SkipToExec(_M_args);
-      // _M_args.print((mew::stack<char*, 8U>::printer)puts);
+      // _M_args.print((mew::stack<char*>::printer)puts);
     }
 
     ////////////////////////////////////////////////////////////
@@ -177,9 +177,9 @@ namespace mew {
     }
 
     ////////////////////////////////////////////////////////////
-    mew::stack<char*, 8U> getStartsWith(const char* start) {
+    mew::stack<char*> getStartsWith(const char* start) {
       size_t length = strlen(start);
-      mew::stack<char*, 8U> all;
+      mew::stack<char*> all;
       for (int i = 0; i < _M_args.size(); ++i) {
         char* e = _M_args.at(i);
         if (mew::memcmp(e, start, length)) {

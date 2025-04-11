@@ -21,7 +21,7 @@ struct SBT_Part {
 
 class SBT {
 private:
-	mew::stack<SBT_Part, 8U> _M_proccess;
+	mew::stack<SBT_Part> _M_proccess;
 public:	
 	////////////////////////////////////////////////////////////
 	SBT() {

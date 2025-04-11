@@ -45,7 +45,7 @@ public:
   typedef graph_edge<T, K>* pointer_edge; 
 private:
   const T _M_props;
-  mew::stack<graph_edge<T, K>*, 8U> _M_edges;
+  mew::stack<graph_edge<T, K>*> _M_edges;
 public:
   ////////////////////////////////////////////////////////////
   graph(const T& props): _M_props(props) { }

@@ -16,7 +16,7 @@ namespace mew {
 template<typename T>
 class matrix {
 private:
-  mew::stack<T, 8U> _M_data;
+  mew::stack<T> _M_data;
   size_t _M_width, _M_height;
 public:
   ////////////////////////////////////////////////////////////
