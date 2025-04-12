@@ -10,6 +10,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_compile_options(-fconcepts)
 add_compile_options(-fpermissive)
 
+include_directories("./")
+add_subdirectory(tests)
+
 aux_source_directory("./" SOURCE)
 
 add_executable(${PROJECT_NAME} main.cpp)

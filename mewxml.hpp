@@ -232,7 +232,7 @@ namespace mew::xml {
   };
 }
 
-namespace mew::test {
+namespace mew::Tests {
   void test_xml() {
     using namespace mew::xml;
     const char* text = "<Element>";

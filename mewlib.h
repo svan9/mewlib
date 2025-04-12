@@ -15,6 +15,8 @@
 	#define MEW_NO_RELEASE
 #endif
 
+#include <cctype>
+
 #ifndef MEW_NO_RELEASE
 	#ifndef DEBUG
 		#define RELEASE

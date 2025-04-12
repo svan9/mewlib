@@ -9,12 +9,12 @@ namespace mew {
 	private:
 		typedef AllocatorBase<T, alloc_size> self;
 		size_t _M_size, _M_capacity;
-		void* _M_data = nullptr;
+		T* _M_data = nullptr;
 	public:
 		AllocatorBase() {}
 		
-		AllocatorBase(size_t count) : _M_capacity(sizeof(T) * (count*alloc_size)), _M_size(0) {
-			_M_data = new T*[(count*alloc_size)];
+		AllocatorBase(size_t count) : _M_capacity(count*alloc_size), _M_size(0) {
+			_M_data = new T[(count*alloc_size)];
 		}
 
 		constexpr size_t AllocSize() const noexcept {
@@ -37,8 +37,8 @@ namespace mew {
 
 		T* alloc(size_t at_before) {
 			if (_M_size >= _M_capacity) {
-				_M_capacity += alloc_size * sizeof(T);
-				void* new_data = new T[_M_capacity];
+				_M_capacity += alloc_size;
+				T* new_data = new T[_M_capacity];
 				memcpy(new_data, _M_data, _M_size * sizeof(T));
 				delete[] _M_data;
 				_M_data = new_data;
@@ -54,10 +54,12 @@ namespace mew {
 
 		T* alloc() {
 			if (_M_size >= _M_capacity) {
-				_M_capacity += alloc_size * sizeof(T);
-				void* new_data = new T[_M_capacity];
+				_M_capacity += alloc_size;
+				T* new_data = new T[_M_capacity];
 				memcpy(new_data, _M_data, _M_size * sizeof(T));
-				delete[] _M_data;
+				if (_M_data) {
+					delete[] _M_data;
+				}
 				_M_data = new_data;
 			}
 			return static_cast<T*>(_M_data) + _M_size++;
@@ -65,10 +67,12 @@ namespace mew {
 
 		void copy(T* list, size_t size) {
 			if (_M_size + size > _M_capacity) {
-				_M_capacity += alloc_size * sizeof(T);
-				void* new_data = new T[_M_capacity];
+				_M_capacity += alloc_size;
+				T* new_data = new T[_M_capacity];
 				memcpy(new_data, _M_data, _M_size * sizeof(T));
-				delete[] _M_data;
+				if (_M_data) {
+					delete[] _M_data;
+				}
 				_M_data = new_data;
 			}
 			memcpy(static_cast<T*>(_M_data) + _M_size, list, size * sizeof(T));
@@ -77,10 +81,12 @@ namespace mew {
 
 		void copy(self& other) {
 			if (_M_size + other._M_size > _M_capacity) {
-				_M_capacity += alloc_size * sizeof(T);
-				void* new_data = new T[_M_capacity];
+				_M_capacity += alloc_size;
+				T* new_data = new T[_M_capacity];
 				memcpy(new_data, _M_data, _M_size * sizeof(T));
-				delete[] _M_data;
+				if (_M_data) {
+					delete[] _M_data;
+				}
 				_M_data = new_data;
 			}
 			memcpy(static_cast<T*>(_M_data) + _M_size, other._M_data, other._M_size * sizeof(T));
@@ -138,7 +144,9 @@ namespace mew {
 				_M_capacity = new_size * sizeof(T);
 				void* new_data = new T[_M_capacity];
 				memcpy(new_data, _M_data, _M_size * sizeof(T));
-				delete[] _M_data;
+				if (_M_data) {
+					delete[] _M_data;
+				}
 				_M_data = new_data;
 			}
 			_M_size = new_size;
@@ -149,7 +157,9 @@ namespace mew {
 				_M_capacity = size * sizeof(T);
 				void* new_data = new T[_M_capacity];
 				memcpy(new_data, _M_data, _M_size * sizeof(T));
-				delete[] _M_data;
+				if (_M_data) {
+					delete[] _M_data;
+				}
 				_M_data = new_data;
 			}
 		}
@@ -189,13 +199,13 @@ namespace mew {
 	using Allocator = AllocatorBase<T, 1>;
 
 	template<typename T>
-	using MidAllocator = AllocatorBase<T, sizeof(T)*10>;
+	using MidAllocator = AllocatorBase<T, 10>;
 	
 	template<typename T>
-	using BigAllocator = AllocatorBase<T, sizeof(T)*50>;
+	using BigAllocator = AllocatorBase<T, 50>;
 
 	template<typename T>
-	using LargeAllocator = AllocatorBase<T, sizeof(T)*100>;
+	using LargeAllocator = AllocatorBase<T, 100>;
 
 
 };
