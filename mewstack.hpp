@@ -132,6 +132,23 @@ public:
   }
 
   ////////////////////////////////////////////////////////////
+  T* _copy_value(T& value) {
+    return new T(value);
+  }
+  ////////////////////////////////////////////////////////////
+  T* _copy_value(T&& value) {
+    return new T(value);
+  }
+  ////////////////////////////////////////////////////////////
+  T* _copy_value(const T& value) {
+    return new T(value);
+  }
+  ////////////////////////////////////////////////////////////
+  T* _copy_value(T* value) {
+    return new T(value);
+  }
+
+  ////////////////////////////////////////////////////////////
   _GLIBCXX20_CONSTEXPR
   T& operator[](int idx) {
     return at(idx);
@@ -146,21 +163,24 @@ public:
   ////////////////////////////////////////////////////////////
   size_t push(T&& value) {
     T* pointer = _M_allocator.alloc();
-    memcpy(pointer, &value, sizeof(value));
+    T* __value = _copy_value(value);
+    memcpy(pointer, __value, sizeof(value));
     return _M_allocator.count()-1;
   }
 
   ////////////////////////////////////////////////////////////
   size_t push(const T& value) {
     T* pointer = _M_allocator.alloc();
-    memcpy(pointer, &value, sizeof(value));
+    T* __value = _copy_value(value);
+    memcpy(pointer, __value, sizeof(value));
     return _M_allocator.count()-1;
   }
 
   ////////////////////////////////////////////////////////////
   size_t push(T* ptr) {
     T* pointer = _M_allocator.alloc();
-    memcpy(pointer, ptr, sizeof(T));
+    T* __value = _copy_value(ptr);
+    memcpy(pointer, __value, sizeof(T));
     return _M_allocator.count()-1;
   }
 
@@ -170,7 +190,8 @@ public:
       return push(value);
     }
     void* pointer = (void*)(_M_allocator.rbegin()-offset)+size();
-    memcpy(pointer, &value, sizeof(value));
+    T* __value = _copy_value(value);
+    memcpy(pointer, __value, sizeof(value));
     return _M_allocator.count()-1;
   }
 

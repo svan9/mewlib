@@ -10,20 +10,31 @@ namespace mew {
 		typedef AllocatorBase<T, alloc_size> self;
 		size_t _M_size, _M_capacity;
 		T* _M_data = nullptr;
+
+		static T* _alloc(size_t count) {
+			// return (T*)malloc(sizeof(T)*count);
+			return new T[count];
+		}
+
+		static void _dealloc(T* ptr) {
+			// free(ptr);
+			delete ptr;
+		}
+
 	public:
 		AllocatorBase() {}
 		
 		AllocatorBase(size_t count) : _M_capacity(count*alloc_size), _M_size(0) {
-			_M_data = new T[(count*alloc_size)];
+			_M_data = _alloc(count*alloc_size);
 		}
-
+		
 		constexpr size_t AllocSize() const noexcept {
 			return alloc_size;
 		}
 
 		~AllocatorBase() {
 			if (_M_data) {
-				delete[] _M_data;
+				_dealloc(_M_data);
 			}
 		}
 
@@ -38,15 +49,15 @@ namespace mew {
 		T* alloc(size_t at_before) {
 			if (_M_size >= _M_capacity) {
 				_M_capacity += alloc_size;
-				T* new_data = new T[_M_capacity];
+				T* new_data = _alloc(_M_capacity);
 				memcpy(new_data, _M_data, _M_size * sizeof(T));
-				delete[] _M_data;
+				_dealloc(_M_data);
 				_M_data = new_data;
 			}
 
 			MewUserAssert(at_before <= _M_size, "Index out of range");
 
-			T* insert_pos = static_cast<T*>(_M_data) + at_before;
+			T* insert_pos = (T*)(_M_data) + at_before;
 			memmove(insert_pos + 1, insert_pos, (_M_size - at_before) * sizeof(T));
 			++_M_size;
 			return insert_pos;
@@ -55,41 +66,41 @@ namespace mew {
 		T* alloc() {
 			if (_M_size >= _M_capacity) {
 				_M_capacity += alloc_size;
-				T* new_data = new T[_M_capacity];
+				T* new_data = _alloc(_M_capacity);
 				memcpy(new_data, _M_data, _M_size * sizeof(T));
 				if (_M_data) {
-					delete[] _M_data;
+					_dealloc(_M_data);
 				}
 				_M_data = new_data;
 			}
-			return static_cast<T*>(_M_data) + _M_size++;
+			return (T*)(_M_data) + _M_size++;
 		}
 
 		void copy(T* list, size_t size) {
 			if (_M_size + size > _M_capacity) {
 				_M_capacity += alloc_size;
-				T* new_data = new T[_M_capacity];
+				T* new_data = _alloc(_M_capacity);
 				memcpy(new_data, _M_data, _M_size * sizeof(T));
 				if (_M_data) {
-					delete[] _M_data;
+					_dealloc(_M_data);
 				}
 				_M_data = new_data;
 			}
-			memcpy(static_cast<T*>(_M_data) + _M_size, list, size * sizeof(T));
+			memcpy((T*)(_M_data) + _M_size, list, size * sizeof(T));
 			_M_size += size;
 		}
 
 		void copy(self& other) {
 			if (_M_size + other._M_size > _M_capacity) {
 				_M_capacity += alloc_size;
-				T* new_data = new T[_M_capacity];
+				T* new_data = _alloc(_M_capacity);
 				memcpy(new_data, _M_data, _M_size * sizeof(T));
 				if (_M_data) {
-					delete[] _M_data;
+					_dealloc(_M_data);
 				}
 				_M_data = new_data;
 			}
-			memcpy(static_cast<T*>(_M_data) + _M_size, other._M_data, other._M_size * sizeof(T));
+			memcpy((T*)(_M_data) + _M_size, other._M_data, other._M_size * sizeof(T));
 			_M_size += other._M_size;
 		}
 
@@ -103,9 +114,9 @@ namespace mew {
 		}		
 
 		void dealloc(T* ptr) {
-			if (ptr >= static_cast<T*>(_M_data) && ptr < static_cast<T*>(_M_data) + _M_size) {
+			if (ptr >= (T*)(_M_data) && ptr < (T*)(_M_data) + _M_size) {
 				--_M_size;
-				memmove(ptr, ptr + 1, (_M_size - (ptr - static_cast<T*>(_M_data))) * sizeof(T));
+				memmove(ptr, ptr + 1, (_M_size - (ptr - (T*)(_M_data))) * sizeof(T));
 			}
 		}
 
@@ -126,15 +137,15 @@ namespace mew {
 
 		void shift() {
 			if (_M_size > 0) {
-				memmove(_M_data, static_cast<T*>(_M_data) + 1, (_M_size - 1) * sizeof(T));
+				memmove(_M_data, (T*)(_M_data) + 1, (_M_size - 1) * sizeof(T));
 				--_M_size;
 			}
 		}
 
 		void erase(size_t start, size_t size = 1) {
 			MewUserAssert(size <= _M_size, "Index out of range");
-			T* begin = static_cast<T*>(_M_data) + start;
-			T* end = static_cast<T*>(_M_data) + start + size;
+			T* begin = (T*)(_M_data) + start;
+			T* end = (T*)(_M_data) + start + size;
 			memmove(begin, end, (_M_size - size) * sizeof(T));
 			_M_size -= size;
 		}
@@ -145,7 +156,7 @@ namespace mew {
 				void* new_data = new T[_M_capacity];
 				memcpy(new_data, _M_data, _M_size * sizeof(T));
 				if (_M_data) {
-					delete[] _M_data;
+					_dealloc(_M_data);
 				}
 				_M_data = new_data;
 			}
@@ -158,26 +169,26 @@ namespace mew {
 				void* new_data = new T[_M_capacity];
 				memcpy(new_data, _M_data, _M_size * sizeof(T));
 				if (_M_data) {
-					delete[] _M_data;
+					_dealloc(_M_data);
 				}
 				_M_data = new_data;
 			}
 		}
 
 		T* begin() const noexcept {
-			return static_cast<T*>(_M_data);
+			return (T*)(_M_data);
 		}
 
 		T* end() const noexcept {
-			return static_cast<T*>(_M_data) + _M_size;
+			return (T*)(_M_data) + _M_size;
 		}
 
 		byte* rbegin() const noexcept {
-			return static_cast<byte*>(_M_data) + _M_size * sizeof(T);
+			return (byte*)(_M_data) + _M_size * sizeof(T);
 		}
 
 		byte* rend() const noexcept {
-			return static_cast<byte*>(_M_data);
+			return (byte*)(_M_data);
 		}
 		
 		void pop() {
