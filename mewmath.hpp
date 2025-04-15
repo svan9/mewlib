@@ -17,6 +17,43 @@
 #include <future>
 
 namespace mew {
+
+	////////////////////////////////////////////////////////////
+	template<typename T>
+	T* _copy_value(T& value) {
+		return new T(value);
+	}
+	////////////////////////////////////////////////////////////
+	template<typename T>
+	T* _copy_value(const T& value) {
+		return _copy_value(const_cast<T&>(value));
+	}
+	////////////////////////////////////////////////////////////
+	template<typename T>
+	T* _copy_value(T&& value) {
+		return new T(value);
+	}
+	////////////////////////////////////////////////////////////
+	template<typename T>
+	T* _copy_value(T* value) {
+		return new T(value);
+	}
+		
+	template<typename T>
+	void copy_to(T* ptr, T& copied) {
+		new (ptr) T(copied);
+	}
+	template<typename T>
+	void copy_to(T* ptr, const T& copied) {
+		new (ptr) T(const_cast<T&>(copied));
+	}
+	template<typename T>
+	void copy_to(T* ptr, T* copied) {
+		new (ptr) T(*copied);
+	}
+	
+	
+	
 	bool rmemcmp(byte* a, byte* b, size_t size) {
 		for (int i = 0; i < size; ++i) {
 			if (a[i] != b[i]) return false;

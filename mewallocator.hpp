@@ -13,12 +13,25 @@ namespace mew {
 
 		static T* _alloc(size_t count) {
 			// return (T*)malloc(sizeof(T)*count);
-			return new T[count];
+			T* ptr = new T[count];
+			memset(ptr, 0, count*sizeof(T));
+			return ptr;
 		}
 
 		static void _dealloc(T* ptr) {
-			// free(ptr);
-			delete ptr;
+			if (std::is_arithmetic<T>::value) {
+				delete ptr;
+			} else {
+				delete[] ptr;
+			}
+		}
+
+		void _copy_all(T* dist, T* src) {
+			for (size_t i = 0; i < _M_size; ++i) {
+				T* to = dist+i;
+				T* from = src+i;
+				copy_to(to, *from);
+			}
 		}
 
 	public:
@@ -26,6 +39,12 @@ namespace mew {
 		
 		AllocatorBase(size_t count) : _M_capacity(count*alloc_size), _M_size(0) {
 			_M_data = _alloc(count*alloc_size);
+		}
+		
+		AllocatorBase(self& ref): _M_capacity(ref._M_capacity), _M_size(ref._M_size) {
+			_M_data = _alloc(_M_capacity);
+			_copy_all(_M_data, ref._M_data);
+			printf("COPY ALLOCATOR\n");
 		}
 		
 		constexpr size_t AllocSize() const noexcept {
@@ -47,14 +66,7 @@ namespace mew {
 		}
 
 		T* alloc(size_t at_before) {
-			if (_M_size >= _M_capacity) {
-				_M_capacity += alloc_size;
-				T* new_data = _alloc(_M_capacity);
-				memcpy(new_data, _M_data, _M_size * sizeof(T));
-				_dealloc(_M_data);
-				_M_data = new_data;
-			}
-
+			upsise();
 			MewUserAssert(at_before <= _M_size, "Index out of range");
 
 			T* insert_pos = (T*)(_M_data) + at_before;
@@ -63,16 +75,20 @@ namespace mew {
 			return insert_pos;
 		}
 
-		T* alloc() {
+		void upsise() {
 			if (_M_size >= _M_capacity) {
 				_M_capacity += alloc_size;
 				T* new_data = _alloc(_M_capacity);
-				memcpy(new_data, _M_data, _M_size * sizeof(T));
+				_copy_all(new_data, _M_data);
 				if (_M_data) {
 					_dealloc(_M_data);
 				}
 				_M_data = new_data;
 			}
+		}
+
+		T* alloc() {
+			upsise();
 			return (T*)(_M_data) + _M_size++;
 		}
 
@@ -80,7 +96,7 @@ namespace mew {
 			if (_M_size + size > _M_capacity) {
 				_M_capacity += alloc_size;
 				T* new_data = _alloc(_M_capacity);
-				memcpy(new_data, _M_data, _M_size * sizeof(T));
+				_copy_all(new_data, _M_data);
 				if (_M_data) {
 					_dealloc(_M_data);
 				}
@@ -94,7 +110,7 @@ namespace mew {
 			if (_M_size + other._M_size > _M_capacity) {
 				_M_capacity += alloc_size;
 				T* new_data = _alloc(_M_capacity);
-				memcpy(new_data, _M_data, _M_size * sizeof(T));
+				_copy_all(new_data, _M_data);
 				if (_M_data) {
 					_dealloc(_M_data);
 				}

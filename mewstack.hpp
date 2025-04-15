@@ -44,7 +44,9 @@ public:
   }
 
   ////////////////////////////////////////////////////////////
-  stack(stack<T>& ref): _M_allocator(ref._M_allocator) {}
+  stack(stack<T>& ref): _M_allocator(ref._M_allocator) {
+    printf("COPY STACK\n");
+  }
 
   stack(size_t size): _M_allocator(size) { }
 
@@ -132,23 +134,6 @@ public:
   }
 
   ////////////////////////////////////////////////////////////
-  T* _copy_value(T& value) {
-    return new T(value);
-  }
-  ////////////////////////////////////////////////////////////
-  T* _copy_value(T&& value) {
-    return new T(value);
-  }
-  ////////////////////////////////////////////////////////////
-  T* _copy_value(const T& value) {
-    return new T(value);
-  }
-  ////////////////////////////////////////////////////////////
-  T* _copy_value(T* value) {
-    return new T(value);
-  }
-
-  ////////////////////////////////////////////////////////////
   _GLIBCXX20_CONSTEXPR
   T& operator[](int idx) {
     return at(idx);
@@ -163,35 +148,31 @@ public:
   ////////////////////////////////////////////////////////////
   size_t push(T&& value) {
     T* pointer = _M_allocator.alloc();
-    T* __value = _copy_value(value);
-    memcpy(pointer, __value, sizeof(value));
+    copy_to(pointer, value);
     return _M_allocator.count()-1;
   }
 
   ////////////////////////////////////////////////////////////
   size_t push(const T& value) {
     T* pointer = _M_allocator.alloc();
-    T* __value = _copy_value(value);
-    memcpy(pointer, __value, sizeof(value));
+    copy_to(pointer, value);
     return _M_allocator.count()-1;
   }
 
   ////////////////////////////////////////////////////////////
   size_t push(T* ptr) {
     T* pointer = _M_allocator.alloc();
-    T* __value = _copy_value(ptr);
-    memcpy(pointer, __value, sizeof(T));
+    copy_to(pointer, *ptr);
     return _M_allocator.count()-1;
   }
 
   ////////////////////////////////////////////////////////////
   size_t push(const T& value, size_t offset) {
-    if (offset == 0) {
+    if (offset < sizeof(T)) {
       return push(value);
     }
     void* pointer = (void*)(_M_allocator.rbegin()-offset)+size();
-    T* __value = _copy_value(value);
-    memcpy(pointer, __value, sizeof(value));
+    copy_to(pointer, value);
     return _M_allocator.count()-1;
   }
 

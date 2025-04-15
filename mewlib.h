@@ -118,6 +118,8 @@
 #endif
 #define MEW_SBOOL(expr) ((expr)? "true": "false")
 
+#define MEW_UNUSE(expr) (void)(expr)
+
 #include <string.h>
 
 char* scopy(const char* str, size_t len) {
