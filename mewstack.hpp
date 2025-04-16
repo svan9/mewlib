@@ -171,7 +171,7 @@ public:
     if (offset < sizeof(T)) {
       return push(value);
     }
-    void* pointer = (void*)(_M_allocator.rbegin()-offset)+size();
+    T* pointer = (T*)(_M_allocator.rbegin()-offset)+size();
     copy_to(pointer, value);
     return _M_allocator.count()-1;
   }
