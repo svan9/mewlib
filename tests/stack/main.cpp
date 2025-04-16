@@ -1,6 +1,7 @@
 #include "mewlib.h"
 #include "mewstack.hpp"
 #include "mewallocator.hpp"
+#include "mewmalloc.hpp"
 
 #include <iostream>
 #include <chrono>
@@ -39,18 +40,24 @@ float get_test_time() {
 }
 
 int main() {
-	typedef mew::stack<int> lvl_1;
-	typedef mew::stack<lvl_1> lvl_2;
-	lvl_2 stack;
-	for (int i = 0; i < 40; ++i) {
-		lvl_1 _st;
-		for (int x = i; x < i+20; ++x) {
-			_st.push(x);
-		}
-		printf("%i\n", i);
-		stack.push(_st);
-		printf("%i\n", i);
-	}
+	int* i = (int*)mew::mem::alloc(sizeof(int));
+	*i = 10;
+	printf("1: %i\n", *i);
+	mew::mem::dealloc(i);
+	printf("2: %i\n", *i);
+
+	// typedef mew::stack<int> lvl_1;
+	// typedef mew::stack<lvl_1> lvl_2;
+	// lvl_2 stack;
+	// for (int i = 0; i < 40; ++i) {
+	// 	lvl_1 _st;
+	// 	for (int x = i; x < i+20; ++x) {
+	// 		_st.push(x);
+	// 	}
+	// 	printf("%i\n", i);
+	// 	stack.push(_st);
+	// 	printf("%i\n", i);
+	// }
 	// printf("--- Mew Stack Test ---\n");
 	// constexpr const size_t count = 100'000;
 	// float time_s; 
