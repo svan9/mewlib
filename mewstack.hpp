@@ -21,7 +21,7 @@ class stack {
 private:
   _Alloc _M_allocator;
 public:
-  stack(): _M_allocator(1) {} // Initialize _M_capacity
+  stack(): _M_allocator(1) { } // Initialize _M_capacity
   
   ////////////////////////////////////////////////////////////
   size_t size() const noexcept {
@@ -171,7 +171,7 @@ public:
     if (offset < sizeof(T)) {
       return push(value);
     }
-    T* pointer = (T*)(_M_allocator.rbegin()-offset)+size();
+    T* pointer = (T*)(_M_allocator.rend()-offset)+size();
     copy_to(pointer, value);
     return _M_allocator.count()-1;
   }

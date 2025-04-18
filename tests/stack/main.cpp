@@ -40,12 +40,11 @@ float get_test_time() {
 }
 
 int main() {
-	int* i = (int*)mew::mem::alloc(sizeof(int));
+	int* i = mew::mem::alloc<int>(1);
 	*i = 10;
 	printf("1: %i\n", *i);
 	mew::mem::dealloc(i);
 	printf("2: %i\n", *i);
-
 	// typedef mew::stack<int> lvl_1;
 	// typedef mew::stack<lvl_1> lvl_2;
 	// lvl_2 stack;

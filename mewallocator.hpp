@@ -14,6 +14,7 @@ namespace mew {
 
 		static T* _alloc(size_t count) {
 			// return (T*)malloc(sizeof(T)*count);
+			// return mew::mem::alloc<T>(count);
 			T* ptr = new T[count];
 			memset(ptr, 0, count*sizeof(T));
 			return ptr;

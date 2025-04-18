@@ -133,9 +133,9 @@ namespace mew {
 			struct { T x, y, z; };
 		};
 
-		vec<3, T> xy() { return vec<2, T>{x, y}; }
-		vec<3, T> xz() { return vec<2, T>{x, z}; }
-		vec<3, T> yz() { return vec<2, T>{y, z}; }
+		vec<2, T> xy() { return vec<2, T>{x, y}; }
+		vec<2, T> xz() { return vec<2, T>{x, z}; }
+		vec<2, T> yz() { return vec<2, T>{y, z}; }
 
 		self_type& operator+=(const self_type& l) {
 			x += l.x; 
