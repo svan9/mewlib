@@ -250,6 +250,15 @@ public:
   }
 
   ////////////////////////////////////////////////////////////
+  void erase(T& value) {
+    size_t idx = indexOf(value);
+    if (idx != (size_t)(-1)) {
+      erase(idx, 1);
+    }
+  }
+  
+
+  ////////////////////////////////////////////////////////////
   bool empty() const noexcept {
     return size() == 0;
   }
