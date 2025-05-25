@@ -13,19 +13,18 @@ namespace mew {
 		T* _M_data = nullptr;
 
 		static T* _alloc(size_t count) {
-			// return (T*)malloc(sizeof(T)*count);
-			// return mew::mem::alloc<T>(count);
 			T* ptr = new T[count];
 			memset(ptr, 0, count*sizeof(T));
 			return ptr;
 		}
 
 		static void _dealloc(T* ptr) {
-			if (std::is_arithmetic<T>::value || std::is_enum<T>::value) {
-				delete ptr;
-			} else {
-				delete[] ptr;
-			}
+			ptr->~T();
+			// if (std::is_arithmetic<T>::value || std::is_enum<T>::value) {
+			// 	delete ptr;
+			// } else {
+			// 	delete[] ptr;
+			// }
 		}
 
 		void _copy_all(T* dist, T* src) {

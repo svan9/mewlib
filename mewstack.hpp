@@ -34,9 +34,20 @@ public:
   }
 
   ////////////////////////////////////////////////////////////
-  T* begin() const noexcept{
+  T* begin() const noexcept {
     return _M_allocator.begin();
   }
+  
+  ////////////////////////////////////////////////////////////
+  T* end() const noexcept {
+    return _M_allocator.end();
+  }
+  
+  ////////////////////////////////////////////////////////////
+  const T* cbegin() const { return (const T*)_M_allocator.begin(); }
+
+  ////////////////////////////////////////////////////////////
+  const T* cend() const { return (const T*)_M_allocator.end(); }
 
   ////////////////////////////////////////////////////////////
   stack(T* _array, size_t _length): _M_allocator(1U) {
@@ -44,10 +55,9 @@ public:
   }
 
   ////////////////////////////////////////////////////////////
-  stack(stack<T>& ref): _M_allocator(ref._M_allocator) {
-    // printf("COPY STACK\n");
-  }
-
+  stack(stack<T>& ref): _M_allocator(ref._M_allocator) { }
+  
+  ////////////////////////////////////////////////////////////
   stack(size_t size): _M_allocator(size) { }
 
   ////////////////////////////////////////////////////////////
@@ -119,21 +129,12 @@ public:
   }
 
   ////////////////////////////////////////////////////////////
-  T& at(int idx, size_t offset) const {
-    if (offset == 0) {
-      return at(get_real_idx(idx));
-    }
-    return at(get_real_idx(idx), offset);
-  }
+  [[deprecated("unsafe")]]
+  T& at(int idx, size_t offset) const;
 
   ////////////////////////////////////////////////////////////
-  byte* rat(int offset) const {
-    size_t max_limit = size();
-    int idx = offset+(int)size();
-    MewUserAssert(idx >= 0 && idx < max_limit, "out of range");
-    size_t real_idx = rget_real_idx_AT(idx);
-    return (byte*)(_M_allocator.rbegin()+real_idx);
-  }
+  [[deprecated("unsafe")]]
+  byte* rat(int offset) const;
 
   ////////////////////////////////////////////////////////////
   _GLIBCXX20_CONSTEXPR
@@ -169,14 +170,8 @@ public:
   }
 
   ////////////////////////////////////////////////////////////
-  size_t push(const T& value, size_t offset) {
-    if (offset < sizeof(T)) {
-      return push(value);
-    }
-    T* pointer = (T*)(_M_allocator.rend()-offset)+size();
-    copy_to(pointer, value);
-    return _M_allocator.count()-1;
-  }
+  [[deprecated("unsafe")]]
+  size_t push(const T& value, size_t offset);
 
   ////////////////////////////////////////////////////////////
   template<typename ...Args>
@@ -207,15 +202,14 @@ public:
     return ptr;
   }
 
-
   ////////////////////////////////////////////////////////////
   T* copy_data() {
     return rcopy(_M_allocator.begin(), _M_allocator.size());
   }
   
   ////////////////////////////////////////////////////////////
-  T top(size_t offset = 0) {
-    return at(-1, offset);
+  T top() {
+    return at(-1);
   }
 
   ////////////////////////////////////////////////////////////
@@ -223,15 +217,6 @@ public:
     T t = top();
     _M_allocator.pop();
     return t;
-  }
-
-  ////////////////////////////////////////////////////////////
-  template<typename K>
-  K npop() {
-    MewUserAssert(size() >= sizeof(K), "too more sizeof(K)");
-    auto _K = _M_allocator.end() - sizeof(K);
-    _M_allocator.pop(sizeof(K));
-    return _K;
   }
 
   ////////////////////////////////////////////////////////////
@@ -282,7 +267,7 @@ public:
   size_t indexOf(const T& value) const {
     for (int i = 0; i < size(); ++i) {
       T& cur_el = _M_allocator.begin()[i];
-      if (mew::memcmp(&value, &cur_el, sizeof(T))) {
+      if (value == cur_el) {
         return i;
       }
     }
@@ -293,13 +278,13 @@ public:
   size_t indexOf(T&& value) const {
     for (int i = 0; i < size(); ++i) {
       T& cur_el = _M_allocator.begin()[i];
-      if (mew::memcmp(&value, &cur_el, sizeof(T))) {
+      if (value == cur_el) {
         return i;
       }
     }
     return (size_t)(-1);
   }
-  
+
   ////////////////////////////////////////////////////////////
   void shift() {
     _M_allocator.shift();
@@ -317,12 +302,8 @@ public:
     if (indexOf(value) != (size_t)(-1)) {
       push(value);
     }
-}
-  
-  ////////////////////////////////////////////////////////////
-  T* end() const noexcept {
-    return _M_allocator.end();
   }
+
 
   ////////////////////////////////////////////////////////////
   friend bool operator==(stack<T, _Alloc>& st, std::initializer_list<T> list) {
