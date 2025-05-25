@@ -45,7 +45,7 @@ public:
 
   ////////////////////////////////////////////////////////////
   stack(stack<T>& ref): _M_allocator(ref._M_allocator) {
-    printf("COPY STACK\n");
+    // printf("COPY STACK\n");
   }
 
   stack(size_t size): _M_allocator(size) { }
@@ -77,17 +77,20 @@ public:
 
   ////////////////////////////////////////////////////////////
   T& at(size_t idx) const {
-  MewAssert(has(idx));
-  return data()[idx];
+    MewAssert(has(idx));
+    return data()[idx];
   }
   ////////////////////////////////////////////////////////////
   T& at(size_t idx, size_t offset) const {
-    MewAssert(has(idx));
-    return *(T*)((void*)data()+((idx*sizeof(T))-((int)offset)));
+    MewAssert(has(idx) && idx-(offset/sizeof(T)) >= 0);
+    T* _d = &(data()[idx]);
+    _d = (T*)((byte*)_d - offset);
+    return *(T*)(_d);
   }
 
   ////////////////////////////////////////////////////////////
   size_t get_real_idx(int idx) const noexcept {
+    MewUserAssert(count() != 0, "stack is empty");
     if (idx == 0) {
       return 0;
     }
@@ -104,8 +107,8 @@ public:
     }
     int real_idx;
     int ssize = size();
-    // real_idx = mod(idx, (int)ssize);
-    real_idx = ((int)ssize + idx);
+    real_idx = mod(idx, ssize);
+    real_idx = (ssize + real_idx) % ssize;
     real_idx = real_idx % ssize;
     return real_idx;
   }
@@ -125,11 +128,10 @@ public:
 
   ////////////////////////////////////////////////////////////
   byte* rat(int offset) const {
-    const size_t max_limit = (count()*sizeof(T));
-    const size_t idx = (count()*sizeof(T))+offset;
-    MewAssert(idx >= 0);
-    MewAssert(idx < max_limit);
-    const size_t real_idx = rget_real_idx_AT(offset);
+    size_t max_limit = size();
+    int idx = offset+(int)size();
+    MewUserAssert(idx >= 0 && idx < max_limit, "out of range");
+    size_t real_idx = rget_real_idx_AT(idx);
     return (byte*)(_M_allocator.rbegin()+real_idx);
   }
 
@@ -204,7 +206,8 @@ public:
     ptr->_M_allocator.copy(_M_allocator); 
     return ptr;
   }
-  
+
+
   ////////////////////////////////////////////////////////////
   T* copy_data() {
     return rcopy(_M_allocator.begin(), _M_allocator.size());
@@ -245,6 +248,15 @@ public:
   void erase(int idx) {
     erase(get_real_idx(idx), 1);
   }
+
+  ////////////////////////////////////////////////////////////
+  void erase(T& value) {
+    size_t idx = indexOf(value);
+    if (idx != (size_t)(-1)) {
+      erase(idx, 1);
+    }
+  }
+  
 
   ////////////////////////////////////////////////////////////
   bool empty() const noexcept {

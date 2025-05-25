@@ -288,7 +288,7 @@ namespace {
 		}
 		
 		T& operator[](int idx) {
-			MewUserAssert(idx >= 0 && idx <= (_m_pank.size/sizeof(T)), "Out of range");
+			MewUserAssert(idx >= 0 && idx <= (_m_pank->size/sizeof(T)), "Out of range");
 			return _m_ptr[idx];
 		}
 

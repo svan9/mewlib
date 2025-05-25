@@ -9,31 +9,40 @@
 #pragma pack(push, 1)
 
 namespace mew::cad {
+	using namespace mew::utils;
+	namespace Contexts {
+		struct DefaultTokenContext {
+			size_t line_idx;
+			DefaultTokenContext() {}
+			DefaultTokenContext(size_t line): line_idx(line) {}
+		};
+
+		struct Number: DefaultTokenContext {
+			size_t size;
+			Number(size_t size): size(size) {}
+		};
+		
+		struct String: DefaultTokenContext {
+			size_t size;
+			String(size_t size): size(size) {}
+		};
+
+		
+	};
 
 	template<typename TokenType>
 	class Compiler {
 	public:
 		typedef std::unordered_map<const char *, TokenType> token_table_t;
-		token_table_t tokens;
+		token_table_t token_table;
 
 		struct Flags {
 			bool use_string: 1 = true;
 		} flags;
 
-		Compiler(token_table_t tokens): tokens(tokens) {}
+		Compiler(token_table_t token_table): token_table(token_table) {}
 
-		namespace Contexts {
-			struct DefaultTokenContext {
-				size_t line_idx;
-				DefaultTokenContext() {}
-				DefaultTokenContext(size_t line): line_idx(line) {}
-			};
-
-			struct Number: DefaultTokenContext {
-				size_t size;
-				Number(size_t size): size(size) {}
-			};
-		};
+		
 	
 		struct Token {
 			TokenType type;
@@ -49,8 +58,11 @@ namespace mew::cad {
 			token_row_t token_row;
 			mew::stack<const char*> lines;
 			const char* input_file = "local";
-			const bool use_beauty_error;
+			bool use_beauty_error;
+			Compiler& parent;
 			token_watcher watcher = 0;
+
+			Lexer(Compiler& parent): parent(parent) {}
 
 			void _fill_simple() {
 				for (int i = 0; i < lines.size(); ++i) {
@@ -62,7 +74,7 @@ namespace mew::cad {
 					while ((word = *str_row++) != nullptr && *word != '\0' && !(is_comment = mew::strcmp(word, ";"))) {
 						Token tk;
 						bool is_in_table = false;
-						for (auto it = tokens.begin(); it != tokens.end(); ++it) {
+						for (auto it = parent.token_table.begin(); it != parent.token_table.end(); ++it) {
 							if (mew::strcmp(it->first, word)) {
 								tk.type = it->second;
 								if (use_beauty_error) tk.context = new Contexts::DefaultTokenContext(i);
@@ -117,8 +129,8 @@ namespace mew::cad {
 			}
 		};
 
-		Lexer* tokenize(const char* input_content, const char* input_file = "local", bool use_beauty_error = false) {
-			Lexer* lexer = new Lexer();
+		Lexer* tokenize(Compiler& parent, const char* input_content, const char* input_file = "local", bool use_beauty_error = false) {
+			Lexer* lexer = new Lexer(parent);
 			lexer->input_file = input_file;
 			lexer->lines = *utils::splitLines(input_content);
 			lexer->use_beauty_error = use_beauty_error;
@@ -126,8 +138,8 @@ namespace mew::cad {
 			lexer->_decrypt_undefined();
 			return lexer;
 		}
-		Lexer* tokenize(const char* input_content, token_watcher watcher, const char* input_file = "local", bool use_beauty_error = false) {
-			Lexer* lexer = new Lexer();
+		Lexer* tokenize(Compiler& parent, const char* input_content, token_watcher watcher, const char* input_file = "local", bool use_beauty_error = false) {
+			Lexer* lexer = new Lexer(parent);
 			lexer->input_file = input_file;
 			lexer->lines = *utils::splitLines(input_content);
 			lexer->use_beauty_error = use_beauty_error;
