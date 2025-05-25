@@ -40,73 +40,73 @@ float get_test_time() {
 }
 
 int main() {
-	int* i = mew::mem::alloc<int>(1);
-	*i = 10;
-	printf("1: %i\n", *i);
-	mew::mem::dealloc(i);
-	printf("2: %i\n", *i);
-	// typedef mew::stack<int> lvl_1;
-	// typedef mew::stack<lvl_1> lvl_2;
-	// lvl_2 stack;
-	// for (int i = 0; i < 40; ++i) {
-	// 	lvl_1 _st;
-	// 	for (int x = i; x < i+20; ++x) {
-	// 		_st.push(x);
-	// 	}
-	// 	printf("%i\n", i);
-	// 	stack.push(_st);
-	// 	printf("%i\n", i);
-	// }
-	// printf("--- Mew Stack Test ---\n");
-	// constexpr const size_t count = 100'000;
-	// float time_s; 
+	// int* i = mew::mem::alloc<int>(1);
+	// *i = 10;
+	// printf("1: %i\n", *i);
+	// mew::mem::dealloc(i);
+	// printf("2: %i\n", *i);
+	typedef mew::stack<int> lvl_1;
+	typedef mew::stack<lvl_1> lvl_2;
+	lvl_2 stack;
+	for (int i = 0; i < 40; ++i) {
+		lvl_1 _st;
+		for (int x = i; x < i+20; ++x) {
+			_st.push(x);
+		}
+		printf("%i\n", i);
+		stack.push(_st);
+		printf("%i\n", i);
+	}
+	printf("--- Mew Stack Test ---\n");
+	constexpr const size_t count = 100'000;
+	float time_s; 
 
-	// std::cout << "Standart allocator test: ";
-	// if (count < 500'000) {
-	// 	mew::stack<size_t> standart_alloc;
-	// 	begin_measure();
-	// 		for (size_t i = 0; i < count; ++i) {
-	// 			standart_alloc.push(i);
-	// 		}
-	// 	end_measure();
-	// 	time_s = get_test_time();
-	// 	std::cout << time_s << "ms" << std::endl;	
-	// } else {
-	// 	printf("skipped\n");
-	// }
-	// std::cout << "Big allocator test: ";
-	// if (count <= 1'000'000) {
-	// 	mew::stack<size_t, mew::BigAllocator<size_t>> big_alloc;
-	// 	begin_measure();
-	// 		for (size_t i = 0; i < count; ++i) {
-	// 			big_alloc.push(i);
-	// 		}
-	// 	end_measure();
-	// 	time_s = get_test_time();
-	// 	std::cout << time_s << "ms" << std::endl;
-	// } else {
-	// 	printf("skipped\n");
-	// }
-	// std::cout << "Mid allocator test: ";
-	// if (count < 500'000) {
-	// 	mew::stack<size_t, mew::MidAllocator<size_t>> mid_alloc;
-	// 	begin_measure();
-	// 		for (size_t i = 0; i < count; ++i) {
-	// 			mid_alloc.push(i);
-	// 		}
-	// 	end_measure();
-	// 	time_s = get_test_time();
-	// 	std::cout << time_s << "ms" << std::endl;
-	// } else {
-	// 	printf("skipped\n");
-	// }
-	// std::cout << "Large allocator test: ";
-	// mew::stack<size_t, mew::LargeAllocator<size_t>> large_alloc;
-	// begin_measure();
-	// 	for (size_t i = 0; i < count; ++i) {
-	// 		large_alloc.push(i);
-	// 	}
-	// end_measure();
-	// time_s = get_test_time();
-	// std::cout << time_s << "ms" << std::endl;
+	std::cout << "Standart allocator test: ";
+	if (count < 500'000) {
+		mew::stack<size_t> standart_alloc;
+		begin_measure();
+			for (size_t i = 0; i < count; ++i) {
+				standart_alloc.push(i);
+			}
+		end_measure();
+		time_s = get_test_time();
+		std::cout << time_s << "ms" << std::endl;	
+	} else {
+		printf("skipped\n");
+	}
+	std::cout << "Big allocator test: ";
+	if (count <= 1'000'000) {
+		mew::stack<size_t, mew::BigAllocator<size_t>> big_alloc;
+		begin_measure();
+			for (size_t i = 0; i < count; ++i) {
+				big_alloc.push(i);
+			}
+		end_measure();
+		time_s = get_test_time();
+		std::cout << time_s << "ms" << std::endl;
+	} else {
+		printf("skipped\n");
+	}
+	std::cout << "Mid allocator test: ";
+	if (count < 500'000) {
+		mew::stack<size_t, mew::MidAllocator<size_t>> mid_alloc;
+		begin_measure();
+			for (size_t i = 0; i < count; ++i) {
+				mid_alloc.push(i);
+			}
+		end_measure();
+		time_s = get_test_time();
+		std::cout << time_s << "ms" << std::endl;
+	} else {
+		printf("skipped\n");
+	}
+	std::cout << "Large allocator test: ";
+	mew::stack<size_t, mew::LargeAllocator<size_t>> large_alloc;
+	begin_measure();
+		for (size_t i = 0; i < count; ++i) {
+			large_alloc.push(i);
+		}
+	end_measure();
+	time_s = get_test_time();
+	std::cout << time_s << "ms" << std::endl;
 }
