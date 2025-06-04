@@ -130,11 +130,20 @@ public:
 
   ////////////////////////////////////////////////////////////
   [[deprecated("unsafe")]]
-  T& at(int idx, size_t offset) const;
+  T& at(int idx, size_t offset) const {
+    return at(get_real_idx(idx), offset);
+  }
 
   ////////////////////////////////////////////////////////////
   [[deprecated("unsafe")]]
-  byte* rat(int offset) const;
+  byte* rat(int offset) const {
+    MewUserAssert(count() != 0, "stack is empty");
+    size_t real_idx = rget_real_idx_AT(offset);
+    MewUserAssert(real_idx < count(), "index out of range");
+    T* _d = &(data()[real_idx]);
+    _d = (T*)((byte*)_d - offset);
+    return (byte*)(_d);
+  }
 
   ////////////////////////////////////////////////////////////
   _GLIBCXX20_CONSTEXPR
@@ -171,7 +180,11 @@ public:
 
   ////////////////////////////////////////////////////////////
   [[deprecated("unsafe")]]
-  size_t push(const T& value, size_t offset);
+  size_t push(const T& value, size_t offset) {
+    T* pointer = _M_allocator.alloc(offset);
+    memcpy(pointer, &value, sizeof(value));
+    return offset+1;
+  }
 
   ////////////////////////////////////////////////////////////
   template<typename ...Args>
@@ -211,11 +224,25 @@ public:
   T top() {
     return at(-1);
   }
+  ////////////////////////////////////////////////////////////
+  T top(int offset) {
+    return at(-1, offset);
+  }
 
   ////////////////////////////////////////////////////////////
   T pop() {
     T t = top();
     _M_allocator.pop();
+    return t;
+  }
+  
+  ////////////////////////////////////////////////////////////
+  template<typename K>
+  K npop() {
+    K t;
+    MewUserAssert(_M_allocator.size() >= sizeof(K), "not enough data to pop");
+    memcpy(&t, _M_allocator.end() - sizeof(K), sizeof(K));
+    _M_allocator.pop(sizeof(K));
     return t;
   }
 
