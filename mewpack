@@ -1,0 +1,3 @@
+#ifndef MEW_NO_PACKING
+#pragma pack(push, 1)
+#endif
