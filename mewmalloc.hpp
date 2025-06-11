@@ -1,5 +1,5 @@
-#ifndef MEW_MALLOC_HPP
 #define MEW_MALLOC_HPP
+#ifndef MEW_MALLOC_HPP
 
 #include "mewlib.h"
 #pragma pack(push, 1)

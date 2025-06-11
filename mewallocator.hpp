@@ -13,9 +13,9 @@ namespace mew {
 		T* _M_data = nullptr;
 
 		static T* _alloc(size_t count) {
-			T* ptr = new T[count];
+			byte* ptr = new byte[count*sizeof(T)];
 			memset(ptr, 0, count*sizeof(T));
-			return ptr;
+			return (T*)ptr;
 		}
 
 		static void _dealloc(T* ptr) {

@@ -12,9 +12,11 @@
 #include "mewstring.hpp"
 #include <iostream>
 #include <fstream>
+#ifndef MEWLIB_NO_WINDOWS
 #ifdef _WIN32
   #include <windows.h>
   // #include <libloaderapi.h>
+#endif
 #endif
 
 namespace mew {

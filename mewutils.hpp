@@ -10,6 +10,7 @@
 #include "mewlib.h"
 #include "mewstack.hpp"
 #include "mewstring.hpp"
+#include <variant>
 #include <filesystem>
 
 namespace mew::utils {
@@ -97,6 +98,7 @@ char* str_separate(const char* str, size_t size) {
   using namespace mew::string;
   StringBuilder sb;
   char* result;
+  while (std::isspace(*str)) { ++str; --size; }
   for (size_t i = 0; i < size; ++i) {
     // skip strings
     if (str[i] == '\"') {
@@ -129,13 +131,34 @@ char* str_separate(const char* str) {
   return str_separate(str, strlen(str));
 }
 
+char* str_split(const char* str, size_t size, char s, bool trim = true) {
+  using namespace mew::string;
+  StringBuilder sb;
+  for (size_t i = 0; i < size; ++i) {
+    if (str[i] == s || (trim && std::isspace(str[i]))) {
+      sb.Append('\0', true);
+    } else {
+      sb += str[i];
+    }
+  }
+  sb += '\0';
+  sb += '\1';
+  char* ostr = scopy((char*)sb.c_str(), sb.size()+1);
+  return ostr;
+}
+
+char* str_split(const char* str, char s, bool trim = true) {
+  return str_split(str, strlen(str), s, trim);
+}
+
 char* shift_word(char* separeted) {
   if (separeted == nullptr) return nullptr;
   char* begin = separeted;
-  while (*++begin != '\0') { }
+  while (*begin != '\0') { ++begin; }
   ++begin;
   return *begin == '\1' ? nullptr: begin;
 }
+
 
 char* str_to_str(const char* separeted) {
   if (separeted[0] != '\"') {
@@ -155,6 +178,11 @@ char* str_to_str(const char* separeted) {
       begin[i] = '\t';
       memmove(begin+i+1, begin+i+2, strlen(begin+i+1));
     }
+  }
+  if (begin[strlen(begin)-1] == '\"') {
+    begin[strlen(begin)-1] = '\0';
+  } else {
+    begin[strlen(begin)] = '\0';
   }
   return begin;
 }
@@ -211,6 +239,42 @@ double str_to_double(const char* str, bool& success) {
   }
 }
 
+using NumberVariant = std::variant<int, float, double, bool>;
+NumberVariant str_to_number(const char* str) {
+  bool success;
+  if (str == nullptr || *str == '\0') {
+    success = false;
+    return 0; // Default value for int
+  }
+
+  if (strcmp(str, "true") == 0 || strcmp(str, "false") == 0) {
+    success = true;
+    return strcmp(str, "true") == 0;
+  }
+
+  if (strchr(str, '.')) {
+    // Try to parse as float or double
+    double d_value = str_to_double(str, success);
+    if (success) {
+      return d_value;
+    }
+    float f_value = str_to_float(str, success);
+    if (success) {
+      return f_value;
+    }
+  } else {
+    // Try to parse as int
+    int i_value = str_to_int(str, success);
+    if (success) {
+      return i_value;
+    }
+  }
+
+  success = false;
+  return 0; // Default value for int
+}
+
+
 class TokenRow {
 private:
   // free before
@@ -219,7 +283,7 @@ private:
 public: 
   TokenRow() {}
   TokenRow(const char* str): m_sequence(str_separate(str)),c_ptr(m_sequence.get()) {}
-  TokenRow(TokenRow& tr): m_sequence(tr.m_sequence),c_ptr(tr.c_ptr) {}
+  TokenRow(TokenRow& tr): m_sequence(tr.m_sequence), c_ptr(tr.c_ptr) {}
 
   void config(const char* str) {
     m_sequence.reset(str_separate(str));

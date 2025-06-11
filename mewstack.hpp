@@ -86,6 +86,26 @@ public:
   }
 
   ////////////////////////////////////////////////////////////
+  bool has(T& idx) const noexcept {
+    for (int i = 0; i < count(); ++i) {
+      if (at(i) == idx) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  ////////////////////////////////////////////////////////////
+  bool has(T* idx) const noexcept {
+    for (int i = 0; i < count(); ++i) {
+      if (&(at(i)) == idx) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  ////////////////////////////////////////////////////////////
   T& at(size_t idx) const {
     MewAssert(has(idx));
     return data()[idx];
@@ -268,7 +288,6 @@ public:
       erase(idx, 1);
     }
   }
-  
 
   ////////////////////////////////////////////////////////////
   bool empty() const noexcept {

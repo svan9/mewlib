@@ -229,6 +229,9 @@ namespace mew {
 	struct vec<2, T> {
 		typedef vec<2, T> self_type;
 
+		vec() {}
+		vec(T x, T y) : x(x), y(y) {}
+
 		union {
 			struct { T x, y; };
 		};
@@ -344,15 +347,13 @@ namespace mew {
 			return *this;
 		}
 	};
-	typedef vec<2, float> vec2;
-	template<>
-	vec2 vec2::Zero{0.0f,0.0f};
-	typedef vec<2, uint> vec2u;
-	template<>
-	vec2u	vec2u::Zero{0,0};
+	template<typename T>
+	using vec2 = vec<2, T>;
 	template<typename T>
 	using vec3 = vec<3, T>;
-	
+
+	typedef vec2<float> vec2f;
+
 	void test() {
 		vec3<float> v1{1.0f, 2.0f, 3.0f};
 		vec3<float> v2{4.0f, 5.0f, 6.0f};
