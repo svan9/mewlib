@@ -128,6 +128,14 @@ char* scopy(const char* str, size_t len) {
 	out[len] = '\0';
 	return out;
 }
+
+wchar_t* scopy(const wchar_t* str, size_t len) {
+	wchar_t* out = (wchar_t*)malloc(len+1);
+	memcpy(out, str, len);
+	out[len] = '\0';
+	return out;
+}
+
 void* rcopy(void* ptr, size_t len) {
 	void* out = (char*)malloc(len);
 	memcpy(out, ptr, len);
@@ -171,6 +179,10 @@ char* scopy(const char* str) {
 	return scopy(str, strlen(str));
 }
 
+wchar_t* scopy(const wchar_t* str) {
+	return scopy(str, wcslen(str));
+}
+
 const char* btoi(bool b) {
 	return b ? "true" : "false";
 }
@@ -194,7 +206,9 @@ T* tmalloc() {
 	return (T*)(malloc(sizeof(T)));
 }
 	#define MewPrintError(_error) printf("\nErrored from %s:%i at function `%s(...)`\n\twhat: %s", __FILE__, __LINE__, __func__, (_error).what());
-
+#if defined(_WIN32)
+# define _GLIBCXX_FILESYSTEM_IS_WINDOWS 1
+#endif
 	#include <string>
 	#include <filesystem>
 	#include <wchar.h>
@@ -203,12 +217,15 @@ T* tmalloc() {
 	#include <concepts>
 #endif
 
+	#include <codecvt>
+
 typedef char* data_t;
 typedef unsigned char byte;
 typedef unsigned int uint;
 typedef unsigned int uint;
 typedef long long int lli;
 namespace mew {
+	namespace fs = std::filesystem;
 	typedef char* data_t;
 	#ifdef __cplusplus
 	typedef unsigned char byte;
@@ -252,7 +269,36 @@ namespace mew {
 	template<typename VF, typename VS>
 	concept same_as = std::same_as<ClearType<VF>, ClearType<VS>>;
 
-	std::string ReadFile(std::filesystem::path& path) {
+	bool is_valid_utf8(const std::string& str) {
+	  try {
+    	std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+    	converter.from_bytes(str);
+    	return true;
+  	} catch (...) {
+    	return false;
+  	}
+	}
+	bool is_valid_utf8(const char* str) {
+	  try {
+    	std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+    	converter.from_bytes(str);
+    	return true;
+  	} catch (...) {
+    	return false;
+  	}
+	}
+
+	std::wstring stringToWstring(const std::string& str) {
+		// std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+		std::wstring out;
+		for(char c: str) {
+			out += (wchar_t)c;
+		}
+		return ;
+	}
+
+
+	std::string ReadFile(fs::path& path) {
 		constexpr const size_t read_size = 4096;
 		std::ifstream file(path, std::ios::in);
     MewAssert(file.is_open());
@@ -268,23 +314,72 @@ namespace mew {
 		return out;
 	}
 
-	std::string ReadFile(const char* path) {
-		std::filesystem::path __path(path);
-    if (!__path.is_absolute()) {
-      __path = std::filesystem::absolute(__path.lexically_normal());
+	const char* ReadFileAbs(const char* path) {
+		constexpr const size_t read_size = 4096UL;
+		std::ifstream file(path, std::ios::in);
+    MewAssert(file.is_open());
+    file.seekg(std::ios::beg);
+    file >> std::noskipws;
+		std::string out;
+		std::string buf(read_size, '\0');
+		while (file.read(&buf[0], read_size)) {
+			out.append(buf, 0, file.gcount());
     }
-    return ReadFile(__path);
+		out.append(buf, 0, file.gcount());
+		file.close();
+		return scopy(out.c_str());
 	}
 
-	std::filesystem::path get_path(const char* path) {
-		std::filesystem::path __path(path);
+	bool is_safe_path_char(char c) {
+    // Allow basic ASCII plus some Windows special chars
+    return (c >= 32 && c <= 126) || c == '\\' || c == ':' || c == '.';
+	}
+
+	std::string sanitize_path(const std::string& input) {
+    std::string output;
+    for (char c : input) {
+        if (is_safe_path_char(c)) {
+            output += c;
+        }
+    }
+    return output;
+	}
+	std::string ReadFile(const char* path) {
+		std::string str(path);
+		str = sanitize_path(str);
+		// MewUserAssert(is_valid_utf8(str), "Invalid Path");
+		fs::path __path(str);
 		if (!__path.is_absolute()) {
-			__path = std::filesystem::absolute(__path.lexically_normal());
+			__path = fs::absolute(__path.lexically_normal());
+		}
+		return ReadFile(__path);
+	}
+	
+	std::string ReadFile(const wchar_t* path) {
+		fs::path __path(path);
+		if (!__path.is_absolute()) {
+			__path = fs::absolute(__path.lexically_normal());
+		}
+		return ReadFile(__path);
+	}
+
+	fs::path get_path(const char* path) {
+		fs::path __path(path);
+		if (!__path.is_absolute()) {
+			__path = fs::absolute(__path.lexically_normal());
 		}
 		return __path;
 	}
 
-	char* wcharToChar(const wchar_t* wstr) {
+	fs::path get_path(const wchar_t* path) {
+		fs::path __path(path);
+		if (!__path.is_absolute()) {
+			__path = fs::absolute(__path.lexically_normal());
+		}
+		return __path;
+	}
+
+	char* wchar_to_char(const wchar_t* wstr) {
 		size_t len = wcslen(wstr);
 		size_t convertedLen = wcstombs(nullptr, wstr, 0);
 		if (convertedLen == (size_t)-1) {
@@ -295,8 +390,18 @@ namespace mew {
 		return cstr;
 	}
 
-	const char* get_file_name(std::filesystem::path& path) {
-		return scopy(wcharToChar(path.filename().c_str()));
+	wchar_t* char_to_wchar(const char* wstr) {
+		size_t len = strlen(wstr);
+		wchar_t* cstr = new wchar_t[len+1];
+		for (int i = 0; i < len; ++i) {
+			cstr[i] = (wchar_t)wstr[i];
+		}
+		return cstr;
+	}
+
+
+	const char* get_file_name(fs::path& path) {
+		return scopy(wchar_to_char(path.filename().c_str()));
 	}
 
 	const char* ReadFullFile(const char* path) {
@@ -304,7 +409,17 @@ namespace mew {
 		return scopy(content.c_str(), content.size());
 	}
 
-	const char* ReadFullFile(std::filesystem::path& path) {
+	const char* ReadFullFileAbs(const char* path) {
+		const char* content = ReadFileAbs(path);
+		return content;
+	}
+
+	const char* ReadFullFile(const wchar_t* path) {
+		std::string content = ReadFile(path);
+		return scopy(content.c_str(), content.size());
+	}
+
+	const char* ReadFullFile(fs::path& path) {
 		std::string content = ReadFile(path);
 		return scopy(content.c_str(), content.size());
 	}
@@ -321,7 +436,7 @@ namespace mew {
 		return scopy(result.c_str());
 	}
 
-	std::ifstream getIfStream(std::filesystem::path& path) {
+	std::ifstream getIfStream(fs::path& path) {
 		std::ifstream file(path, std::ios::in);
     MewAssert(file.is_open());
     file.seekg(std::ios::beg);
@@ -370,24 +485,24 @@ namespace mew {
 	}
 
 	std::ifstream getIfStream(const char* dir, const char* file) {
-		std::filesystem::path __path(dir);
+		fs::path __path(dir);
 		__path /= file;
 		if (!__path.is_absolute()) {
-			__path = std::filesystem::absolute(__path.lexically_normal());
+			__path = fs::absolute(__path.lexically_normal());
 		}
 		return getIfStream(__path);
 	}
 	
 	std::ifstream getIfStream(const char* path) {
-		std::filesystem::path __path(path);
+		fs::path __path(path);
     if (!__path.is_absolute()) {
-      __path = std::filesystem::absolute(__path.lexically_normal());
+      __path = fs::absolute(__path.lexically_normal());
     }
     return getIfStream(__path);
 	}
 
 	const char* concatPath(const char* first, const char* second) {
-		std::filesystem::path __path(first);
+		fs::path __path(first);
 		__path = __path / (second[0] == '/' ? second+1 : second);
 		auto ref = __path.string();
 		return scopy(ref.c_str(), ref.size());
@@ -404,8 +519,8 @@ namespace mew {
 	bool strcmp(const char* s, const char* m) {
 		size_t s1 = strlen(s);
 		size_t s2 = strlen(m);
-		if (s1 != s2) return false;
-		for (int i = 0; i < s1; ++i) {
+		if (s1 < s2) return false;
+		for (int i = 0; i < s2; ++i) {
 			if (s[i] != m[i]) {
 				return false;
 			}
@@ -415,6 +530,16 @@ namespace mew {
 
 	bool starts_with(const char* l, const char* m) {
 		return strcmp(l, m, strlen(m));
+	}
+
+	bool iscmpstr(char l, const char* m) {
+		while (*m != 0) if (l == *m++) return true;
+		return false;
+	}
+
+	bool iscmpstr(wchar_t l, const wchar_t* m) {
+		while (*m != 0) if (l == *m++) return true;
+		return false;
 	}
 
 #endif	

@@ -231,9 +231,17 @@ namespace mew {
 
 		vec() {}
 		vec(T x, T y) : x(x), y(y) {}
+		vec(const self_type& ref) : x(ref.x), y(ref.y) {}
+
+		self_type& operator=(const self_type& ref) {
+			x = ref.x;
+			y = ref.y;
+			return *this;
+		}
 
 		union {
 			struct { T x, y; };
+
 		};
 
 		self_type& operator+=(const self_type& l) {
@@ -320,6 +328,22 @@ namespace mew {
 		}
 		friend self_type operator/(T l, const self_type& r) {
 			return self_type(r.x/l, r.y/l);
+		}
+		
+		friend bool operator==(const self_type& r, const self_type& l) {
+			return r.x == l.x && r.y == l.y;
+		}
+		friend bool operator>(const self_type& r, const self_type& l) {
+			return r.x > l.x && r.y > l.y;
+		}
+		friend bool operator<(const self_type& r, const self_type& l) {
+			return r.x < l.x && r.y < l.y;
+		}
+		friend bool operator<=(const self_type& r, const self_type& l) {
+			return r.x <= l.x && r.y <= l.y;
+		}
+		friend bool operator>=(const self_type& r, const self_type& l) {
+			return r.x >= l.x && r.y >= l.y;
 		}
 
 		static self_type Zero;

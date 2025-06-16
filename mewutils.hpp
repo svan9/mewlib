@@ -135,10 +135,11 @@ char* str_split(const char* str, size_t size, char s, bool trim = true) {
   using namespace mew::string;
   StringBuilder sb;
   for (size_t i = 0; i < size; ++i) {
-    if (str[i] == s || (trim && std::isspace(str[i]))) {
+    char ss = str[i];
+    if (ss == s || (trim && std::isspace(ss))) {
       sb.Append('\0', true);
     } else {
-      sb += str[i];
+      sb += ss;
     }
   }
   sb += '\0';
@@ -146,10 +147,69 @@ char* str_split(const char* str, size_t size, char s, bool trim = true) {
   char* ostr = scopy((char*)sb.c_str(), sb.size()+1);
   return ostr;
 }
-
 char* str_split(const char* str, char s, bool trim = true) {
   return str_split(str, strlen(str), s, trim);
 }
+
+char* str_split(const char* str, size_t size, const char* s, bool trim = true) {
+  using namespace mew::string;
+  StringBuilder sb;
+  for (size_t i = 0; i < size; ++i) {
+    char ss = str[i];
+    if (mew::iscmpstr(ss, s) || (trim && std::isspace(ss))) {
+      sb.Append('\0', true);
+    } else {
+      sb += ss;
+    }
+  }
+  sb += '\0';
+  sb += '\1';
+  char* ostr = scopy((char*)sb.c_str(), sb.size()+1);
+  return ostr;
+}
+char* str_split(const char* str, const char* s, bool trim = true) {
+  return str_split(str, strlen(str), s, trim);
+}
+wchar_t* str_split(const wchar_t* str, size_t size, wchar_t s, bool trim = true) {
+  using namespace mew::string;
+  WStringBuilder sb;
+  for (size_t i = 0; i < size; ++i) {
+    wchar_t ss = str[i];
+    if (ss == s || (trim && std::isspace(ss))) {
+      sb.Append('\0', true);
+    } else {
+      sb += ss;
+    }
+  }
+  sb += L'\0';
+  sb += L'\1';
+  wchar_t* ostr = scopy((wchar_t*)sb.c_str(), sb.size()+1);
+  return ostr;
+}
+wchar_t* str_split(const wchar_t* str, wchar_t s, bool trim = true) {
+  return str_split(str, wcslen(str), s, trim);
+}
+
+wchar_t* str_split(const wchar_t* str, size_t size, const wchar_t* s, bool trim = true) {
+  using namespace mew::string;
+  WStringBuilder sb;
+  for (size_t i = 0; i < size; ++i) {
+    wchar_t ss = str[i];
+    if (mew::iscmpstr(ss, s) || (trim && std::isspace(ss))) {
+      sb.Append('\0', true);
+    } else {
+      sb += ss;
+    }
+  }
+  sb += L'\0';
+  sb += L'\1';
+  wchar_t* ostr = scopy((wchar_t*)sb.c_str(), sb.size()+1);
+  return ostr;
+}
+wchar_t* str_split(const wchar_t* str, const wchar_t* s, bool trim = true) {
+  return str_split(str, wcslen(str), s, trim);
+}
+
 
 char* shift_word(char* separeted) {
   if (separeted == nullptr) return nullptr;
@@ -157,6 +217,14 @@ char* shift_word(char* separeted) {
   while (*begin != '\0') { ++begin; }
   ++begin;
   return *begin == '\1' ? nullptr: begin;
+}
+
+wchar_t* shift_word(wchar_t* separeted) {
+  if (separeted == nullptr) return nullptr;
+  wchar_t* begin = separeted;
+  while (*begin != L'\0') { ++begin; }
+  ++begin;
+  return *begin == L'\1' ? nullptr: begin;
 }
 
 
@@ -283,7 +351,7 @@ private:
 public: 
   TokenRow() {}
   TokenRow(const char* str): m_sequence(str_separate(str)),c_ptr(m_sequence.get()) {}
-  TokenRow(TokenRow& tr): m_sequence(tr.m_sequence), c_ptr(tr.c_ptr) {}
+  TokenRow(const TokenRow& tr): m_sequence(tr.m_sequence), c_ptr(tr.c_ptr) {}
 
   void config(const char* str) {
     m_sequence.reset(str_separate(str));

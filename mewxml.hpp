@@ -27,6 +27,7 @@ namespace mew::xml {
       Attribute value;
 
       AttributePair(attr_key name, Attribute value): name(name), value(value) {} 
+      AttributePair(const AttributePair& ap): name(ap.name), value(ap.value) {} 
     };
     // typedef std::unordered_map<attr_key, Attribute> attrs_t;
     typedef std::vector<AttributePair> attrs_t;
@@ -35,13 +36,29 @@ namespace mew::xml {
     children_t m_children;
     attrs_t m_attrs;
     const char* m_text_value = nullptr;
+    Element* m_parent = nullptr;
   public:
     Element(): m_tag("dom") { }
     // text element
     Element(const char* value): m_text_value(value), m_tag("TEXT") { }
+    Element(const Element& e)
+      : m_text_value(e.m_text_value), m_tag(e.m_tag), m_children(e.m_children), m_attrs(e.m_attrs), m_parent(e.m_parent)
+      { }
+
+    Element* parent() const noexcept {
+      return m_parent;
+    }
+    
+    void parent(Element* p) {
+      m_parent = p;
+    }
 
     const char* text() const {
       return m_text_value;
+    }
+
+    void text(const char* v) {
+      m_text_value = v;
     }
 
     const char* tag() const {
@@ -70,12 +87,9 @@ namespace mew::xml {
       return nullptr;
     }
 
-    void addChild(const Element& child) {
-      m_children.push_back(child);
-    }
-
     Element& child() {
       m_children.emplace_back();
+      m_children.back().parent(this);
       return m_children.back();
     }
     
@@ -240,15 +254,18 @@ namespace mew::xml {
               Token& next = m_tokens.at(++i);
               // if is tag & not in open
               bool is_self_closing = (next.type == TokenType::Text) && 
-                (!opens.empty() && opens.top()->tag() != next.value);
+                (!opens.empty() && !mew::strcmp(opens.top()->tag(), next.value));
               if (is_self_closing) { // self close element
                 current->tag(scopy(next.value));
                 parseAttribute(i, current);
               } else { // close element
                 opens.erase(current);
+                if (current->parent()) {
+                  current = current->parent();
+                }
               }
             } else { // <'element ...> open element
-              if (opens.has(current)) { // if current is open
+              if (current && opens.has(current)) { // if current is open
                 current = &current->child();
               } else { // if current is closed
                 current = new Element();
@@ -276,6 +293,58 @@ namespace mew::xml {
     return parser.getDom();
   }
   
+
+  class ElementConstructor {
+  private:
+    Element* e;
+  public:
+    ElementConstructor(): e(new Element()) {}
+
+    ElementConstructor(const char* tag): e(new Element()) {
+      e->tag(tag);
+    }
+
+    ElementConstructor& tag(const char* tag) {
+      e->tag(tag);
+      return *this;
+    }
+    
+    ElementConstructor& text(const char* text) {
+      e->text(text);
+      return *this;
+    }
+
+    ElementConstructor& attr(const char* name, Element::Attribute attr) {
+      e->attr(name, attr);
+      return *this;
+    }
+    
+    ElementConstructor& child(Element* child) {
+      e->child(child);
+      return *this;
+    }
+
+    ElementConstructor& child(ElementConstructor& child) {
+      e->child(child.in_code_build());
+      return *this;
+    }
+    
+    ElementConstructor& child(ElementConstructor&& child) {
+      e->child(child.in_code_build());
+      return *this;
+    }
+    
+
+    Element* in_code_build() {
+      return e;
+    }
+
+    std::string build() {
+      return e->toString();
+    }
+    
+    
+  };
  
 }
 
