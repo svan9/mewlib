@@ -1,5 +1,5 @@
-#ifndef MEW_MALLOC_HPP
 #define MEW_MALLOC_HPP
+#ifndef MEW_MALLOC_HPP
 
 #include "mewlib.h"
 #pragma pack(push, 1)
@@ -31,9 +31,6 @@
 #else
 # define DWORD_HI(x) (0)
 # define DWORD_LO(x) (x)
-#endif
-#else 
-#include <sys/mman.h>
 #endif
 
 static void *mmap(void *start, size_t length, int prot, int flags, int fd, off_t offset) {
@@ -91,9 +88,11 @@ static void munmap(void *addr, size_t length)
 	UnmapViewOfFile(addr);
 	/* ruh-ro, we leaked handle from CreateFileMapping() ... */
 }
-
 #undef DWORD_HI
 #undef DWORD_LO
+#else 
+#include <sys/mman.h>
+#endif
 
 namespace mew::mem {
 namespace {
@@ -105,9 +104,9 @@ namespace {
 		byte* data;
 	}; // [HEAD] [DATA]
 	
-	static const size_t _pool_size = 1024*1024;
+	static size_t _pool_size = 1024*1024;
 	static byte* _memory_pool = (byte*)mmap(NULL, _pool_size, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);//[_pool_size];	
-
+	static bool _pool_is_start = false; 
 
 	#define HEAD_CHUNK_SIZE (sizeof(size_t)+sizeof(bool)+(2*sizeof(chunk*)))
 
@@ -133,10 +132,11 @@ namespace {
 		c->size = _pool_size;
 		c->next = NULL;
 		c->prev = NULL;
+		_pool_is_start = true;
 	}
 
 	chunk* _heap_last(chunk* c) {
-		if ((byte*)c == _memory_pool) {
+		if (!_pool_is_start) {
 			_init_heap(c);
 			return c;
 		}
@@ -193,20 +193,120 @@ namespace {
 		memset(&c->data, 0, c->size);
 		return c;
 	}
+
+	bool check_chunk(chunk* c) {
+		byte* begin = (byte*)c;
+		byte* end0 = begin+sizeof(c);
+		byte* pool_end = _memory_pool+_pool_size;
+		if (begin < _memory_pool || end0 > pool_end) {
+			return false;
+		}
+		byte* end1 = begin+sizeof(bool);
+		if (end1 > pool_end) {return false;}
+		byte* end2 = end1+sizeof(size_t);
+		if (end2 > pool_end) {return false;}
+		byte* end3 = end2+sizeof(chunk*);
+		if (end3 > pool_end) {return false;}
+		byte* end4 = end3+sizeof(chunk*);
+		if (end4 > pool_end) {return false;}
+		byte* end5 = end4+sizeof(chunk*);
+		if (end5 > pool_end) {return false;}
+		byte* end6 = end5 + c->size;
+		if (end6 > pool_end) {return false;}
+		return true;
+	}
+
+	// bool try_upscale() {
+	// 	_pool_size+=1024;
+	// 	_memory_pool = (byte*)mmap(_memory_pool, _pool_size, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+
+	// }
 } // end iternal
 	
-	void* alloc(size_t size) {
+	void* r_alloc(size_t size) {
 		size = align_size(size);
 		chunk* c = find_free(size);
-		if (!c) {return NULL;}
+		if (!c || !check_chunk(c)) {return NULL;}
 		CHUNK_LOCK(c);
 		return chunk2mem(c);
 	}
 
-	void dealloc(void* ptr) {
+	bool r_dealloc(void* ptr) {
 		chunk* c = mem2chunk(ptr);
+		if (!check_chunk(c)) return false;
 		CHUNK_UNLOCK(c);
 		while ((c = try_merge_chunks(c)) && (c->prev || c->next)) {}
+		return true;
+	}
+
+	template<typename T>
+	T* alloc(size_t count) {
+		return (T*)r_alloc(count*sizeof(T));	
+	}
+
+	template<typename T>
+	void dealloc(T* ptr) {
+		bool success = r_dealloc((void*)ptr);	
+		MewUserAssert(!success, "heap was failed");
+	}
+	
+	template<typename T>
+	void destruct(T* arr) {
+		chunk* c = mem2chunk(arr);
+		MewUserAssert(!check_chunk(c), "heap was failed");
+		size_t count = c->size/sizeof(T);
+		T* begin = (T*)(&c->data);
+		for (size_t i = 0; i < count; ++i) {
+			T* current = begin+i;
+			delete current;
+		}
+	}
+	
+	
+	template<typename T>
+	class Container {
+	typedef Container<T> self_t;
+	private:
+		T* _m_ptr;
+		chunk* _m_pank;
+	public:
+		Container() {
+			_m_ptr = alloc<T>(1);
+			_m_pank = mem2chunk((void*)_m_ptr);
+		}
+		Container(size_t count) {
+			_m_ptr = alloc<T>(count);
+			_m_pank = mem2chunk((void*)_m_ptr);
+		}
+
+		~Container() {
+			dealloc(_m_ptr);
+		}
+
+		T& at(size_t idx) {
+			return (*this)[(int)idx];
+		}
+		
+		T& operator[](int idx) {
+			MewUserAssert(idx >= 0 && idx <= (_m_pank->size/sizeof(T)), "Out of range");
+			return _m_ptr[idx];
+		}
+
+		self_t& operator=(T& value) {
+			*_m_ptr = value;
+			return *this;
+		}
+
+		T& operator*() {
+			return *_m_ptr;
+		}
+	};
+	void t() {
+		Container<int> ptr;
+		ptr = 10;
+		printf("1: %i\n", *ptr);
+		ptr[10] = 10; // err
+		ptr.at(10) = 2; // err
 	}
 
 }

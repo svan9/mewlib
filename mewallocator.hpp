@@ -13,18 +13,18 @@ namespace mew {
 		T* _M_data = nullptr;
 
 		static T* _alloc(size_t count) {
-			// return (T*)malloc(sizeof(T)*count);
-			T* ptr = new T[count];
+			byte* ptr = new byte[count*sizeof(T)];
 			memset(ptr, 0, count*sizeof(T));
-			return ptr;
+			return (T*)ptr;
 		}
 
 		static void _dealloc(T* ptr) {
-			if (std::is_arithmetic<T>::value) {
-				delete ptr;
-			} else {
-				delete[] ptr;
-			}
+			ptr->~T();
+			// if (std::is_arithmetic<T>::value || std::is_enum<T>::value) {
+			// 	delete ptr;
+			// } else {
+			// 	delete[] ptr;
+			// }
 		}
 
 		void _copy_all(T* dist, T* src) {
@@ -45,7 +45,7 @@ namespace mew {
 		AllocatorBase(self& ref): _M_capacity(ref._M_capacity), _M_size(ref._M_size) {
 			_M_data = _alloc(_M_capacity);
 			_copy_all(_M_data, ref._M_data);
-			printf("COPY ALLOCATOR\n");
+			// printf("COPY ALLOCATOR\n");
 		}
 		
 		constexpr size_t AllocSize() const noexcept {
@@ -162,8 +162,9 @@ namespace mew {
 		void erase(size_t start, size_t size = 1) {
 			MewUserAssert(size <= _M_size, "Index out of range");
 			T* begin = (T*)(_M_data) + start;
-			T* end = (T*)(_M_data) + start + size;
-			memmove(begin, end, (_M_size - size) * sizeof(T));
+			T* end = (T*)(begin) + size;
+			size_t count = _M_size - size;
+			memmove(begin, end, count * sizeof(T));
 			_M_size -= size;
 		}
 
@@ -201,11 +202,11 @@ namespace mew {
 		}
 
 		byte* rbegin() const noexcept {
-			return (byte*)(_M_data) + _M_size * sizeof(T);
+			return (byte*)(_M_data);
 		}
 
 		byte* rend() const noexcept {
-			return (byte*)(_M_data);
+			return (byte*)(_M_data) + _M_size * sizeof(T);
 		}
 		
 		void pop() {

@@ -145,9 +145,9 @@ namespace mew {
 			struct { T x, y, z; };
 		};
 
-		vec<3, T> xy() { return vec<2, T>{x, y}; }
-		vec<3, T> xz() { return vec<2, T>{x, z}; }
-		vec<3, T> yz() { return vec<2, T>{y, z}; }
+		vec<2, T> xy() { return vec<2, T>{x, y}; }
+		vec<2, T> xz() { return vec<2, T>{x, z}; }
+		vec<2, T> yz() { return vec<2, T>{y, z}; }
 
 		self_type& operator+=(const self_type& l) {
 			x += l.x; 
@@ -242,8 +242,19 @@ namespace mew {
 		typedef vec<2, T> self_type;
 		typedef T element_t;
 
+		vec() {}
+		vec(T x, T y) : x(x), y(y) {}
+		vec(const self_type& ref) : x(ref.x), y(ref.y) {}
+
+		self_type& operator=(const self_type& ref) {
+			x = ref.x;
+			y = ref.y;
+			return *this;
+		}
+
 		union {
 			struct { T x, y; };
+
 		};
 
 		self_type& operator+=(const self_type& l) {
@@ -331,6 +342,22 @@ namespace mew {
 		friend self_type operator/(T l, const self_type& r) {
 			return self_type(r.x/l, r.y/l);
 		}
+		
+		friend bool operator==(const self_type& r, const self_type& l) {
+			return r.x == l.x && r.y == l.y;
+		}
+		friend bool operator>(const self_type& r, const self_type& l) {
+			return r.x > l.x && r.y > l.y;
+		}
+		friend bool operator<(const self_type& r, const self_type& l) {
+			return r.x < l.x && r.y < l.y;
+		}
+		friend bool operator<=(const self_type& r, const self_type& l) {
+			return r.x <= l.x && r.y <= l.y;
+		}
+		friend bool operator>=(const self_type& r, const self_type& l) {
+			return r.x >= l.x && r.y >= l.y;
+		}
 
 		static self_type Zero;
 
@@ -357,15 +384,13 @@ namespace mew {
 			return *this;
 		}
 	};
-	typedef vec<2, float> vec2;
-	template<>
-	vec2 vec2::Zero{0.0f,0.0f};
-	typedef vec<2, uint> vec2u;
-	template<>
-	vec2u	vec2u::Zero{0,0};
+	template<typename T>
+	using vec2 = vec<2, T>;
 	template<typename T>
 	using vec3 = vec<3, T>;
-	
+
+	typedef vec2<float> vec2f;
+
 	void test() {
 		vec3<float> v1{1.0f, 2.0f, 3.0f};
 		vec3<float> v2{4.0f, 5.0f, 6.0f};

@@ -141,6 +141,92 @@ namespace string {
 			return length;
 		}
 	};
+	class WStringBuilder {
+	private:
+		std::unique_ptr<wchar_t[]> buffer;
+		size_t length;
+		size_t capacity;
+			
+		void EnsureCapacity(size_t newCapacity) {
+			if (newCapacity > capacity) {
+				capacity = newCapacity;
+				std::unique_ptr<wchar_t[]> newBuffer(new wchar_t[capacity]);
+				if (buffer) {
+					memcpy(newBuffer.get(), buffer.get(), length);
+				}
+				buffer.swap(newBuffer);
+			}
+		}
+			
+	public:
+		WStringBuilder() : length(0), capacity(16) {
+			wchar_t* ptr = new (std::nothrow) wchar_t[capacity];
+			MewAssert(ptr);
+			buffer.reset(ptr);
+			buffer[0] = '\0';
+		}
+			
+		WStringBuilder& Insert(size_t pos, const wchar_t* str) {
+			size_t strLen = wcslen(str);
+			if (pos > length) {
+				pos = length;
+			}
+			EnsureCapacity(length + strLen + 1);
+			memmove(buffer.get() + pos + strLen, buffer.get() + pos, length - pos + 1);
+			memcpy(buffer.get() + pos, str, strLen);
+			length += strLen;
+			return *this;
+		}
+			
+		WStringBuilder& Append(const wchar_t* str) {
+			size_t strLen = wcslen(str);
+			EnsureCapacity(length + strLen + 1);
+			memcpy(buffer.get() + length, str, strLen);
+			length += strLen;
+			buffer[length] = '\0';
+			return *this;
+		}
+			
+		WStringBuilder& Append(wchar_t c, bool replace = false) {
+			if (length > 0 && replace && buffer[length - 1] == c) {
+				return *this;
+			}
+			EnsureCapacity(length + 2);
+			buffer[length++] = c;
+			buffer[length] = '\0';
+			return *this;
+		}
+
+			
+		wchar_t* c_str() {
+			wchar_t* result = new wchar_t[length + 1];
+			memcpy(result, buffer.get(), length + 1);
+			return result;
+		}
+			
+		void Clear() {
+			length = 0;
+			if (buffer) {
+				buffer[0] = '\0';
+			}
+		}
+			
+		WStringBuilder& operator+=(const wchar_t* c) {
+			return Append(c);
+		}
+			
+		WStringBuilder& operator+=(wchar_t c) {
+			return Append(c);
+		}
+			
+		friend WStringBuilder& operator+(WStringBuilder& l, wchar_t r) {
+			return l.Append(r);
+		}
+			
+		size_t size() const {
+			return length;
+		}
+	};
 
 	class StringIterator {
 	public:

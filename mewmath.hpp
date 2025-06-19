@@ -266,6 +266,7 @@ namespace mew {
 		}
 	};
 
+
 	int wait_char() {
 		if (_kbhit()) return _getch();
 		else return -1;

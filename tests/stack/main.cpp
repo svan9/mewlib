@@ -39,75 +39,95 @@ float get_test_time() {
 	return getSeconds(g_measure_ms);
 }
 
+
+typedef mew::stack<int> lvl_1;
+typedef mew::stack<lvl_1> lvl_2;
+
+void test_1(lvl_2& stack) {
+
+	for (int i = 0; i < 40; ++i) {
+		lvl_1 _st;
+		for (int x = i; x < i+20; ++x) {
+			_st.push(x);
+		}
+		// printf("%i\n", i);
+		stack.push(_st);
+		// printf("%i\n", i);
+	}
+}
+
+
+struct Foo {
+	mew::stack<int> _st;
+	int _x;
+
+	Foo(){}
+	Foo(int x): _x(x) {}
+	Foo(const Foo& other) {
+		_x = other._x;
+		_st = other._st;
+	}
+	Foo(Foo&& other) noexcept {
+		_x = other._x;
+		_st = std::move(other._st);
+	}
+};
+
+double fractal(double x) {
+	return x*x + x;
+}
+
 int main() {
-	int* i = (int*)mew::mem::alloc(sizeof(int));
-	*i = 10;
-	printf("1: %i\n", *i);
-	mew::mem::dealloc(i);
-	printf("2: %i\n", *i);
+	lvl_2 stack;
+	printf("Stack test\n");
+	printf("----PRIMITIVE TEST----\n");
+	test_1(stack);
 
-	// typedef mew::stack<int> lvl_1;
-	// typedef mew::stack<lvl_1> lvl_2;
-	// lvl_2 stack;
-	// for (int i = 0; i < 40; ++i) {
-	// 	lvl_1 _st;
-	// 	for (int x = i; x < i+20; ++x) {
-	// 		_st.push(x);
-	// 	}
-	// 	printf("%i\n", i);
-	// 	stack.push(_st);
-	// 	printf("%i\n", i);
-	// }
-	// printf("--- Mew Stack Test ---\n");
-	// constexpr const size_t count = 100'000;
-	// float time_s; 
+	for (auto& st: stack) {
+		for (auto& el: st) {
+			printf("%i ", el);
+		}
+	}
+	
+	printf("\n----END PRIMITIVE TEST----\n");
+	printf("----CUSTOM OBJECT TEST----\n");
+	mew::stack<Foo> foo_stack;
+	Foo foo;
+	foo._x = 10;
+	foo._st.push(1);
+	foo._st.push(2);
+	foo_stack.push(foo);
+	Foo foo2;
+	foo2._x = 12;
+	foo2._st.push(4);
+	foo2._st.push(5);
+	foo_stack.push(foo2);
+	foo_stack.emplace(44);
+	for (auto& f: foo_stack) {
+		printf("Foo x: %i\n", f._x);
+		for (auto& el: f._st) {
+			printf("%i ", el);
+		}
+		printf("\n");
+	}
+	printf("----END CUSTOM OBJECT TEST----\n");
 
-	// std::cout << "Standart allocator test: ";
-	// if (count < 500'000) {
-	// 	mew::stack<size_t> standart_alloc;
-	// 	begin_measure();
-	// 		for (size_t i = 0; i < count; ++i) {
-	// 			standart_alloc.push(i);
-	// 		}
-	// 	end_measure();
-	// 	time_s = get_test_time();
-	// 	std::cout << time_s << "ms" << std::endl;	
-	// } else {
-	// 	printf("skipped\n");
+	printf("----FRACTAL TEST----\n");
+
+	constexpr const int count = 1000000;
+	mew::stack<double, mew::AllocatorBase<double, count/4>> big_stack;
+	big_stack.push(fractal(0.1f));
+	for (int i = 0; i < count; ++i) {
+		big_stack.push(fractal(big_stack.top()));
+		if (big_stack.top() >= INFINITE) {
+			big_stack.pop();
+			break;
+		}
+	}
+
+	// for (auto& el: big_stack) {
 	// }
-	// std::cout << "Big allocator test: ";
-	// if (count <= 1'000'000) {
-	// 	mew::stack<size_t, mew::BigAllocator<size_t>> big_alloc;
-	// 	begin_measure();
-	// 		for (size_t i = 0; i < count; ++i) {
-	// 			big_alloc.push(i);
-	// 		}
-	// 	end_measure();
-	// 	time_s = get_test_time();
-	// 	std::cout << time_s << "ms" << std::endl;
-	// } else {
-	// 	printf("skipped\n");
-	// }
-	// std::cout << "Mid allocator test: ";
-	// if (count < 500'000) {
-	// 	mew::stack<size_t, mew::MidAllocator<size_t>> mid_alloc;
-	// 	begin_measure();
-	// 		for (size_t i = 0; i < count; ++i) {
-	// 			mid_alloc.push(i);
-	// 		}
-	// 	end_measure();
-	// 	time_s = get_test_time();
-	// 	std::cout << time_s << "ms" << std::endl;
-	// } else {
-	// 	printf("skipped\n");
-	// }
-	// std::cout << "Large allocator test: ";
-	// mew::stack<size_t, mew::LargeAllocator<size_t>> large_alloc;
-	// begin_measure();
-	// 	for (size_t i = 0; i < count; ++i) {
-	// 		large_alloc.push(i);
-	// 	}
-	// end_measure();
-	// time_s = get_test_time();
-	// std::cout << time_s << "ms" << std::endl;
+	printf("END: %llf ", big_stack.top());
+
+	printf("\n----END FRACTAL TEST----\n");
 }

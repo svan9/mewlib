@@ -4,7 +4,9 @@
 #include "mewall.h"
 #include <filesystem>
 #ifdef _WIN32
-  #include <windows.h>
+  #ifndef MEWLIB_NO_WINDOWS
+    #include <windows.h>
+  #endif
 #else
   #include <dlfcn.h>
 #endif
