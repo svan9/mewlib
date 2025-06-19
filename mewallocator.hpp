@@ -2,7 +2,7 @@
 #define MEW_ALLOCATOR_HPP
 
 #include "mewlib.h"
-#include "mewmalloc.hpp"
+// #include "mewmalloc.hpp"
 
 namespace mew {
 	template<typename T, size_t alloc_size>

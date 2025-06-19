@@ -8,6 +8,18 @@ namespace mew {
 	float lerp_value(float a, float b, float t) {
 		return a + (t * (b - a));
 	}
+	int lerp_value(int a, int b, float t) {
+		return a + (t * (b - a));
+	}
+	size_t lerp_value(size_t a, size_t b, float t) {
+		return (size_t)lerp_value((int)a, (int)b, t);
+	}
+	byte lerp_value(byte a, byte b, float t) {
+		return a + (t * (b - a));
+	}
+	float lerp2float(byte a, byte b, float t) {
+		return lerp_value((float)a, (float)b, t);
+	}
 	
 	template<uint L, typename T> struct vec {
 		typedef vec<L, T> self_type;
@@ -228,6 +240,7 @@ namespace mew {
 	template<typename T>
 	struct vec<2, T> {
 		typedef vec<2, T> self_type;
+		typedef T element_t;
 
 		union {
 			struct { T x, y; };
