@@ -390,6 +390,7 @@ namespace mew {
 	using vec3 = vec<3, T>;
 
 	typedef vec2<float> vec2f;
+	typedef vec2<uint> vec2u;
 
 	void test() {
 		vec3<float> v1{1.0f, 2.0f, 3.0f};

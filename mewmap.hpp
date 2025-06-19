@@ -8,6 +8,7 @@
 #ifndef MEW_MAP_LIB_SO2U
 #define MEW_MAP_LIB_SO2U
 #include "mewlib.h"
+#include "mewtypes.h"
 #include <vector>
 #include <list>
 #include <initializer_list>
