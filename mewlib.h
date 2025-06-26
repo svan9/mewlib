@@ -527,6 +527,25 @@ namespace mew {
 		}
 		return true;
 	}
+	bool strcmp(const wchar_t* s, const wchar_t* m, size_t size) {
+		for (int i = 0; i < size; ++i) {
+			if (s[i] != m[i]) {
+				return false;
+			}
+		}
+		return true;
+	}
+	bool strcmp(const wchar_t* s, const wchar_t* m) {
+		size_t s1 = wcslen(s);
+		size_t s2 = wcslen(m);
+		if (s1 < s2) return false;
+		for (int i = 0; i < s2; ++i) {
+			if (s[i] != m[i]) {
+				return false;
+			}
+		}
+		return true;
+	}
 
 	bool starts_with(const char* l, const char* m) {
 		return strcmp(l, m, strlen(m));

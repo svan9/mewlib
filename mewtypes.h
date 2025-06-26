@@ -14,6 +14,11 @@ typedef unsigned int u32;
 typedef int i32;
 typedef unsigned long long u64;
 typedef long long i64;
+typedef unsigned long dword;
+typedef char* cstr;
+typedef wchar_t* wstr;
+typedef const char* ccstr;
+typedef const wchar_t* cwstr;
 
 typedef __uint128_t u128;
 typedef __int128_t i128;
