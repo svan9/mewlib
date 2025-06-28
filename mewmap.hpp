@@ -36,7 +36,6 @@ namespace Hash {
 	size_t get_hash(const T& value) {
 		return std::hash<T>{}(value);
 	}
-
 }
 namespace mew {
 
@@ -221,8 +220,8 @@ namespace mew {
 		struct Node {
 			HashType hash;
 			Value value;
-			Node(HashType h, const Value& v) : hash(h), value(v) {}
-			Node(HashType h, Value&& v) : hash(h), value(std::move(v)) {}
+			Node(HashType h, const Value& v) : hash(h), value((Value)v) {}
+			Node(HashType h, Value&& v) : hash(h), value((Value)std::move(v)) {}
 		};
 
 		std::vector<std::list<Node>> buckets;
@@ -293,7 +292,7 @@ namespace mew {
 					return node.value;
 				}
 			}
-			buckets[index].emplace_back(hash, value);
+			buckets[index].emplace_back(hash, (Value)value);
 			size++;
 			return buckets[index].back().value;
 		}
@@ -312,8 +311,8 @@ namespace mew {
 				}
 			}
 			buckets[index].emplace_back(hash, std::move(value));
-		 size++;
-		 return buckets[index].back().value;
+			size++;
+			return buckets[index].back().value;
 		}
 
 		Value& at(HashType hash) {

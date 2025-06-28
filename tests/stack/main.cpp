@@ -1,4 +1,5 @@
 #include "mewlib.h"
+#include "mewtypes.h"
 #include "mewstack.hpp"
 #include "mewallocator.hpp"
 #include "mewmalloc.hpp"

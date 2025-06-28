@@ -10,7 +10,7 @@
 #include <mutex>
 
 namespace mew {
-	typedef bool(*bool_watcher)();
+	typedef bool(*bool_watcher)(u8* data);
 
 	struct Watcher {
 		// todo std::variant
@@ -39,7 +39,17 @@ namespace mew {
 		std::this_thread::sleep_for(std::chrono::seconds(2));
 	}
 	
-	std::thread wacher_thread(watcher_thread_fn);
+	std::thread watcher_thread;
+
+	void startWatcherThread() {
+		if (!watcher_thread.joinable()) {
+			watcher_thread = std::thread([](){
+				while (true) {
+					watcher_thread_fn();
+				}
+			});
+		}
+	}
 
 	void watchBool(bool_watcher watcher, callable callback) {
 		watcher_mutex.lock();

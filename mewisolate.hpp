@@ -92,6 +92,11 @@ namespace mew {
 	struct IsolateFile {
 		mew::stack<u8> data;
 		IOFlags flags;
+
+		IsolateFile() : flags(IOFlags()) {}
+		IsolateFile(const IOFlags& flags) : flags(flags) { }
+		IsolateFile(const IsolateFile& file) : flags(file.flags), data(file.data) { }
+		
 	};
 	
 	using RawFile = std::variant
@@ -311,8 +316,7 @@ namespace mew {
 		void CreateFileIfNotExist(const char* path) {
 			if (IsExist(path)) return;
 			if (m_is_isolate) {
-				IsolateFile file;
-				m_space.insert(path, file);
+				m_space.insert(path, IsolateFile{});
 			} else {
 				FILE* fp = fopen(path, "wb");
 				if (fp != nullptr) {
@@ -369,7 +373,7 @@ namespace mew {
 				return RawFile{};
 			}
 			FILE* fp = _wfopen(path, char_to_wchar(flags));
-			if (fp != nullptr) {
+			if (fp == NULL) {
 				fclose(fp);
 			}
 			return RawFile{fp};
@@ -410,19 +414,16 @@ namespace mew {
 
 		// Write data from buffer into RawFile, up to size bytes. Returns number of bytes written.
 		size_t Write(RawFile rf, const char* buffer, size_t size, size_t offset = 0) {
-			return std::visit([&](auto&& arg) -> size_t {
+			return std::visit([buffer, size, offset](auto&& arg) -> size_t {
 				using T = std::decay_t<decltype(arg)>;
 				if constexpr (std::is_same_v<T, IsolateFile*>) {
 					if (!arg) return 0;
 					if (!arg->flags.Write) { return 0; }
-					if (offset + size > arg->data.size()) {
-						arg->data.resize(offset + size);
-					}
-					memcpy(arg->data.begin() + offset, buffer, size);
+					arg->data.copy((u8*)buffer, size, offset);
 					return size;
 				} else if constexpr (std::is_same_v<T, FILE*>) {
 					if (!arg) return 0;
-					if (fseek(arg, offset, SEEK_SET) != 0) return 0;
+					// if (fseek(arg, offset, SEEK_SET) != 0) return 0;
 					return fwrite(buffer, 1, size, arg);
 				}
 				return 0;
@@ -444,11 +445,26 @@ namespace mew {
 					return size;
 				}
 				return 0;
+				
 			}, rf);
 		}
 
+		std::string ToString() {
+			if (!m_is_isolate) {return {};}
+			std::string buffer;
+			for (auto& node: m_space) {
+				buffer += '\n';
+				buffer += node.hash;
+				buffer += " ----- \n";
+				buffer += (char*)node.value.data.begin();
+				buffer += "\n ----- \n";
+			}
+			return buffer;
+		}
 		
 	};
+
+
 };
 
 #include "mewpop"

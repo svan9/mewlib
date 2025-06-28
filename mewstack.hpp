@@ -22,6 +22,20 @@ private:
   _Alloc _M_allocator;
 public:
   stack(): _M_allocator(1) { } // Initialize _M_capacity
+  stack(const stack<T, _Alloc>& ref): _M_allocator(ref._M_allocator) { }
+  stack(stack<T, _Alloc>&& ref): _M_allocator(ref._M_allocator) { }
+  stack<T, _Alloc>& operator=(const stack<T, _Alloc>& ref) { 
+    if (this != &ref) {
+      _M_allocator = ref._M_allocator; // Use assignment operator of _Alloc
+    }
+    return *this;
+  }
+  stack<T, _Alloc>& operator=(stack<T, _Alloc>&& ref) { 
+    if (this != &ref) {
+      _M_allocator = std::move(ref._M_allocator); // Use move assignment operator of _Alloc
+    }
+    return *this;
+  }
   
   ////////////////////////////////////////////////////////////
   size_t size() const noexcept {
@@ -233,6 +247,11 @@ public:
     stack<T>* ptr = new stack<T>();
     ptr->_M_allocator.copy(_M_allocator); 
     return ptr;
+  }
+  ////////////////////////////////////////////////////////////
+  stack<T, _Alloc>& copy(T* _array, size_t _length, size_t offset = 0) {
+    this->_M_allocator.copy(_array, _length, offset = 0);
+    return *this;
   }
 
   ////////////////////////////////////////////////////////////

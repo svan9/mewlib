@@ -15,8 +15,9 @@
 #endif
 #ifdef _WIN32
 #define stat _stat64
-dword GetFullPathNameA(cstr lpFileName, dword nBufferLength, cstr lpBuffer, cstr *lpFilePart);
-dword GetFullPathNameW(cwstr lpFileName, dword nBufferLength, cwstr lpBuffer, wstr *lpFilePart);
+#include <fileapi.h>
+// extern dword GetFullPathNameA(cstr lpFileName, dword nBufferLength, cstr lpBuffer, cstr *lpFilePart);
+// extern dword GetFullPathNameW(cwstr lpFileName, dword nBufferLength, cwstr lpBuffer, wstr *lpFilePart);
 
 #endif
 
@@ -161,7 +162,10 @@ namespace mew::fs {
 		Path(const PathSymbol* path): m_splited_path(utils::str_split(path, '/')), m_path(scopy(path)) {}
 		
 #ifdef _WIN32
-		Path(const char* path): Path(char_to_wchar(path)) {}		
+		Path(const char* path): Path(char_to_wchar(path)) {
+			auto _path = char_to_wchar(path);
+			m_path = scopy(_path);
+		}		
 #endif
 		
 		// Check if the path exists
@@ -304,6 +308,7 @@ namespace mew::fs {
 		Path& operator=(const char* path) {
 			return operator=(char_to_wchar(path));
 		}
+#ifndef _WIN32
 		Path& operator=(const wchar_t* path) {
 			if (m_path) {
 				free(m_path);
@@ -315,7 +320,7 @@ namespace mew::fs {
 			m_splited_path = utils::str_split(m_path, '/');
 			return *this;
 		}
-
+#endif
 		Path& operator=(const Path& other) {
 			if (this == &other) return *this; // self-assignment check
 			if (m_path) {
@@ -377,46 +382,59 @@ namespace mew::fs {
 		}
 		#endif
 
+
+
+		Path& append(const wchar_t* other) {
+			if (!other || !*other) return *this; // No change if other is empty
+			size_t len = wcslen(m_path);
+			size_t other_len = wcslen(other);
+			wchar_t* new_path = (wchar_t*)malloc(len + other_len + 2); // +1 for '/' and +1 for '\0'
+			wcscpy(new_path, m_path);
+			if (new_path[len - 1] != '/') {
+				new_path[len++] = '/';
+			}
+			wcscpy(new_path + len, other);
+			free(m_path);
+			m_path = new_path;
+			if (m_splited_path) {
+				free(m_splited_path);
+			}
+			m_splited_path = utils::str_split(m_path, '/');
+			return *this;
+		}
+#ifdef _WIN32
+		Path& append(const char* other) {
+			return append(char_to_wchar(other));
+		}
+#else
+		Path& append(const char* other) {
+			if (!other || !*other) return *this; // No change if other is empty
+			size_t len = strlen(m_path);
+			size_t other_len = strlen(other);
+			char* new_path = (char*)malloc(len + other_len + 2); // +1 for '/' and +1 for '\0'
+			strcpy(new_path, m_path);
+			if (new_path[len - 1] != '/') {
+				new_path[len++] = '/';
+			}
+			strcpy(new_path + len, other);
+			free(m_path);
+			m_path = new_path;
+			if (m_splited_path) {
+				free(m_splited_path);
+			}
+			m_splited_path = utils::str_split(m_path, '/');
+			return *this;
+		}
+#endif
+
 		Path& operator/(const PathSymbol* other) {
-			if (!other || !*other) return *this; // No change if other is empty
-			size_t len = wcslen(m_path);
-			size_t other_len = wcslen(other);
-			PathSymbol* new_path = (PathSymbol*)malloc(len + other_len + 2); // +1 for '/' and +1 for '\0'
-			wcscpy(new_path, m_path);
-			if (new_path[len - 1] != '/') {
-				new_path[len++] = '/';
-			}
-			wcscpy(new_path + len, other);
-			free(m_path);
-			m_path = new_path;
-			if (m_splited_path) {
-				free(m_splited_path);
-			}
-			m_splited_path = utils::str_split(m_path, '/');
-			return *this;
+			return append(other);
 		}
+#ifdef _WIN32
 		Path& operator/(const char* other) {
-			return operator/(char_to_wchar(other));
+			return append(other);
 		}
-		
-		Path& operator/(const wchar_t* other) {
-			if (!other || !*other) return *this; // No change if other is empty
-			size_t len = wcslen(m_path);
-			size_t other_len = wcslen(other);
-			PathSymbol* new_path = (PathSymbol*)malloc(len + other_len + 2); // +1 for '/' and +1 for '\0'
-			wcscpy(new_path, m_path);
-			if (new_path[len - 1] != '/') {
-				new_path[len++] = '/';
-			}
-			wcscpy(new_path + len, other);
-			free(m_path);
-			m_path = new_path;
-			if (m_splited_path) {
-				free(m_splited_path);
-			}
-			m_splited_path = utils::str_split(m_path, '/');
-			return *this;
-		}
+#endif
 
 		
 		
@@ -478,6 +496,7 @@ namespace mew::fs {
 			if (m_flags.IsIsolate) {
 				GetIsolate()->off();
 			}
+			m_is_open = true;
 		}
 
 		void Open(const char* flags) {
@@ -489,18 +508,19 @@ namespace mew::fs {
 			if (m_flags.IsIsolate) {
 				GetIsolate()->off();
 			}
+			m_is_open = true;
 		}
 
 		size_t Write(const char* content) {
 			if (!IsOpen()) { Open(); }
 			if (!m_flags.Write) {
 				MewUserAssert(false, "File is not opened for writing");
-				return;
+				return 0;
 			}
 			if (m_flags.IsIsolate) {
 				GetIsolate()->on();
 			}
-			size_t ws = GetIsolate()->Write(m_raw_file, content, m_cursor);
+			size_t ws = GetIsolate()->Write(m_raw_file, content, strlen(content), m_cursor);
 			if (m_flags.IsIsolate) {
 				GetIsolate()->off();
 			}
@@ -546,6 +566,31 @@ namespace mew::fs {
 			}
 			m_is_open = false;
 		}
+ 
+		static void SaveIsolateToFile(const char* path) {
+			GetIsolate()->on();
+			auto raw = GetIsolate()->ToString();
+			FILE* fp = fopen(path, "wb+");
+			if (fp == nullptr) {
+				MewUserAssert(false, "Failed to open file for writing");
+				return;
+			}
+			size_t written = fwrite(raw.data(), 1, raw.size(), fp);
+			fclose(fp);
+			GetIsolate()->off();
+		}
+#ifdef _WIN32
+		static void SaveIsolateToFile(const wchar_t* path) {
+			auto raw = GetIsolate()->ToString();
+			FILE* fp = _wfopen(path, L"wb+");
+			if (fp == nullptr) {
+				MewUserAssert(false, "Failed to open file for writing");
+				return;
+			}
+			size_t written = fwrite(raw.data(), 1, raw.size(), fp);
+			fclose(fp);
+		}
+#endif
 	};
 };
 

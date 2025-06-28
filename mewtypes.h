@@ -38,6 +38,9 @@ ID makeID(u64 high, u64 low) {
 }
 
 typedef void(*callable)();
+#ifndef INFINITE
+#define INFINITE 0xFFFFFFFF
+#endif
 
 #include <time.h>
 

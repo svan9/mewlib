@@ -42,10 +42,29 @@ namespace mew {
 			_M_data = _alloc(count*alloc_size);
 		}
 		
-		AllocatorBase(self& ref): _M_capacity(ref._M_capacity), _M_size(ref._M_size) {
+		AllocatorBase(const self& ref): _M_capacity(ref._M_capacity), _M_size(ref._M_size) {
 			_M_data = _alloc(_M_capacity);
 			_copy_all(_M_data, ref._M_data);
-			// printf("COPY ALLOCATOR\n");
+		}
+		
+		AllocatorBase(self&& ref): _M_capacity(ref._M_capacity), _M_size(ref._M_size) {
+			_M_data = _alloc(_M_capacity);
+			_copy_all(_M_data, ref._M_data);
+		}
+		self& operator=(const self& ref) {
+			_M_capacity = ref._M_capacity;
+			_M_size = ref._M_size;
+			_M_data = _alloc(_M_capacity);
+			_copy_all(_M_data, ref._M_data);
+			return *this;
+		}
+		
+		self& operator=(self&& ref) {
+			_M_capacity = ref._M_capacity;
+			_M_size = ref._M_size;
+			_M_data = _alloc(_M_capacity);
+			_copy_all(_M_data, ref._M_data);
+			return *this;
 		}
 		
 		constexpr size_t AllocSize() const noexcept {
@@ -93,9 +112,9 @@ namespace mew {
 			return (T*)(_M_data) + _M_size++;
 		}
 
-		void copy(T* list, size_t size) {
-			if (_M_size + size > _M_capacity) {
-				_M_capacity += alloc_size;
+		void copy(T* list, size_t size, size_t offset = 0) {
+			if (_M_size + size + offset > _M_capacity) {
+				_M_capacity += ((int)((_M_size + size + offset) / alloc_size)+1) * alloc_size;
 				T* new_data = _alloc(_M_capacity);
 				_copy_all(new_data, _M_data);
 				if (_M_data) {
@@ -103,7 +122,7 @@ namespace mew {
 				}
 				_M_data = new_data;
 			}
-			memcpy((T*)(_M_data) + _M_size, list, size * sizeof(T));
+			memcpy((T*)(_M_data) + _M_size + offset, list, size * sizeof(T));
 			_M_size += size;
 		}
 

@@ -130,9 +130,9 @@ char* scopy(const char* str, size_t len) {
 }
 
 wchar_t* scopy(const wchar_t* str, size_t len) {
-	wchar_t* out = (wchar_t*)malloc(len+1);
-	memcpy(out, str, len);
-	out[len] = '\0';
+	wchar_t* out = (wchar_t*)malloc((len+1) * sizeof(wchar_t));
+	memcpy(out, str, len*sizeof(wchar_t));
+	out[len] = L'\0';
 	return out;
 }
 
@@ -225,7 +225,7 @@ typedef unsigned int uint;
 typedef unsigned int uint;
 typedef long long int lli;
 namespace mew {
-	namespace fs = std::filesystem;
+	namespace std_fs = std::filesystem;
 	typedef char* data_t;
 	#ifdef __cplusplus
 	typedef unsigned char byte;
@@ -298,7 +298,7 @@ namespace mew {
 	}
 
 
-	std::string ReadFile(fs::path& path) {
+	std::string ReadFile(std_fs::path& path) {
 		constexpr const size_t read_size = 4096;
 		std::ifstream file(path, std::ios::in);
     MewAssert(file.is_open());
@@ -348,33 +348,33 @@ namespace mew {
 		std::string str(path);
 		str = sanitize_path(str);
 		// MewUserAssert(is_valid_utf8(str), "Invalid Path");
-		fs::path __path(str);
+		std_fs::path __path(str);
 		if (!__path.is_absolute()) {
-			__path = fs::absolute(__path.lexically_normal());
+			__path = std_fs::absolute(__path.lexically_normal());
 		}
 		return ReadFile(__path);
 	}
 	
 	std::string ReadFile(const wchar_t* path) {
-		fs::path __path(path);
+		std_fs::path __path(path);
 		if (!__path.is_absolute()) {
-			__path = fs::absolute(__path.lexically_normal());
+			__path = std_fs::absolute(__path.lexically_normal());
 		}
 		return ReadFile(__path);
 	}
 
-	fs::path get_path(const char* path) {
-		fs::path __path(path);
+	std_fs::path get_path(const char* path) {
+		std_fs::path __path(path);
 		if (!__path.is_absolute()) {
-			__path = fs::absolute(__path.lexically_normal());
+			__path = std_fs::absolute(__path.lexically_normal());
 		}
 		return __path;
 	}
 
-	fs::path get_path(const wchar_t* path) {
-		fs::path __path(path);
+	std_fs::path get_path(const wchar_t* path) {
+		std_fs::path __path(path);
 		if (!__path.is_absolute()) {
-			__path = fs::absolute(__path.lexically_normal());
+			__path = std_fs::absolute(__path.lexically_normal());
 		}
 		return __path;
 	}
@@ -396,11 +396,12 @@ namespace mew {
 		for (int i = 0; i < len; ++i) {
 			cstr[i] = (wchar_t)wstr[i];
 		}
+		cstr[len] = L'\0';
 		return cstr;
 	}
 
 
-	const char* get_file_name(fs::path& path) {
+	const char* get_file_name(std_fs::path& path) {
 		return scopy(wchar_to_char(path.filename().c_str()));
 	}
 
@@ -419,7 +420,7 @@ namespace mew {
 		return scopy(content.c_str(), content.size());
 	}
 
-	const char* ReadFullFile(fs::path& path) {
+	const char* ReadFullFile(std_fs::path& path) {
 		std::string content = ReadFile(path);
 		return scopy(content.c_str(), content.size());
 	}
@@ -436,7 +437,7 @@ namespace mew {
 		return scopy(result.c_str());
 	}
 
-	std::ifstream getIfStream(fs::path& path) {
+	std::ifstream getIfStream(std_fs::path& path) {
 		std::ifstream file(path, std::ios::in);
     MewAssert(file.is_open());
     file.seekg(std::ios::beg);
@@ -485,24 +486,24 @@ namespace mew {
 	}
 
 	std::ifstream getIfStream(const char* dir, const char* file) {
-		fs::path __path(dir);
+		std_fs::path __path(dir);
 		__path /= file;
 		if (!__path.is_absolute()) {
-			__path = fs::absolute(__path.lexically_normal());
+			__path = std_fs::absolute(__path.lexically_normal());
 		}
 		return getIfStream(__path);
 	}
 	
 	std::ifstream getIfStream(const char* path) {
-		fs::path __path(path);
+		std_fs::path __path(path);
     if (!__path.is_absolute()) {
-      __path = fs::absolute(__path.lexically_normal());
+      __path = std_fs::absolute(__path.lexically_normal());
     }
     return getIfStream(__path);
 	}
 
 	const char* concatPath(const char* first, const char* second) {
-		fs::path __path(first);
+		std_fs::path __path(first);
 		__path = __path / (second[0] == '/' ? second+1 : second);
 		auto ref = __path.string();
 		return scopy(ref.c_str(), ref.size());
