@@ -84,6 +84,7 @@
 #define MewNoImpl() MewUserAssert(false, "not implemented")
 #define MewNotImpl() MewUserAssert(false, "not implemented")
 #define MewWarn(fmt, ...) printf("-- MEW WARN " fmt " --\n", __VA_ARGS__)
+#define MewWarnMessage(fmt) printf("-- MEW WARN " fmt " --\n")
 
 #ifndef DISABLE_MEW_PING
 	#define __mew printf("-- mew at %s:%i, %s(...) --\n", __FILE__, __LINE__, __func__);
