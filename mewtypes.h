@@ -43,6 +43,8 @@ typedef void(*callable)();
 #endif
 
 #include <time.h>
+#include <string.h>
+#include <typeinfo>
 
 namespace mew {
 	struct Date {
@@ -88,6 +90,139 @@ namespace mew {
 		if (is_negative) i *= -1;
 		return i;
 	}
+
+	namespace Helpers {
+		template<typename T>
+		T& max(T& l, T& r, u64 s1, u64 s2) {
+			if (s1 > s2) {
+				return l;
+			}
+			return r;
+		}
+		template<typename T>
+		T& min(T& l, T& r, u64 s1, u64 s2) {
+			if (s1 < s2) {
+				return l;
+			}
+			return r;
+		}
+		
+		template<typename T>
+		constexpr T MaxValue() {
+			return (T)-1;
+		}
+	};
+
+	template<typename NumberType>
+	struct InfinityNumber {
+		NumberType* chunks;
+		u64 chunks_count;
+		typedef InfinityNumber<NumberType> Self;
+		static constexpr NumberType MaxChunkValue = Helpers::MaxValue<NumberType>();
+		
+		Self& operator=(NumberType number) {
+			if (chunks) { delete chunks; }
+			chunks = new NumberType[1];
+			chunks_count = 1;
+			memccpy(chunks, &number, sizeof(number));
+		}
+
+		friend Self& operator+(Self& left, NumberType& right) { 
+			u64 it = 0;
+			NumberType remnant;
+			NumberType value = right;
+			do {
+				remnant = value - (MaxChunkValue - left.chunks[it]);
+				left.chunks[it++] += right;
+				value -= remnant;
+			} while(remnant != 0 && it < left.chunks_count);
+			return left;
+		}
+
+		friend Self& operator+(Self& left, Self& right) {
+			Self& _dest = Helpers::max<Self>(left, right, left.chunks_count, right.chunks_count);
+			Self& _src = Helpers::min<Self>(left, right, left.chunks_count, right.chunks_count);
+
+			for (u64 i = 0; i < _src.chunk_count; ++i) {
+				NumberType& _src_chunk = _src.chunks[i];
+				u64 it = i;
+				NumberType remnant;
+				NumberType value = _src_chunk;
+				do {
+					remnant = value - (MaxChunkValue - _dest.chunks[it]);
+					_dest.chunks[it++] += right;
+					value -= remnant;
+				} while(remnant != 0 && it < _dest.chunks_count);
+			}
+			return left;
+		}
+
+		friend Self& operator-(Self& left, NumberType& right) {
+			u64 it = 0;
+			NumberType remnant;
+			NumberType value = right;
+			do {
+				remnant = value - (MaxChunkValue - left.chunks[it]);
+				left.chunks[it++] -= right;
+				value -= remnant;
+			} while(remnant != 0 && it < left.chunks_count);
+			return left;
+		}
+
+		friend Self& operator-(Self& left, Self& right) {
+			Self& _dest = Helpers::min<Self>(left, right, left.chunks_count, right.chunks_count);
+			Self& _src = Helpers::max<Self>(left, right, left.chunks_count, right.chunks_count);
+
+			for (u64 i = 0; i < _src.chunk_count; ++i) {
+				NumberType& _src_chunk = _src.chunks[i];
+				u64 it = i;
+				NumberType remnant;
+				NumberType value = _src_chunk;
+				do {
+					remnant = value - (MaxChunkValue - _dest.chunks[it]);
+					_dest.chunks[it++] -= right;
+					value -= remnant;
+				} while(remnant != 0 && it < _dest.chunks_count);
+			}
+			return left;
+		}
+		
+
+	};
+
+	template<typename ...Types>
+	class Variant {
+	private:
+
+	public:
+		Variant() { }
+
+		template<typename T>
+		bool match() {
+			
+		}
+		template<typename T, typename ...Args>
+		static bool match() {
+			
+		}
+		
+		
+	};
+	
+
+	namespace math {
+		static constexpr double pi = 3.141592653589793;
+	}
+
+	void sleep_ms(u64 ms) {
+		::_sleep(ms);
+	}
+
+	void sleep_s(f64 s) {
+		::_sleep(s * 1000);
+	}
 }
+
+
 
 #endif
