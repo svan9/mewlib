@@ -6,7 +6,7 @@
 #endif
 
 typedef unsigned char byte;
-typedef byte u8;
+typedef unsigned char u8;
 typedef char i8;
 typedef unsigned short u16;
 typedef short i16;
@@ -89,5 +89,9 @@ namespace mew {
 		return i;
 	}
 }
+
+template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
+// explicit deduction guide (not needed as of C++20)
+template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
 
 #endif

@@ -96,7 +96,7 @@ namespace mew {
 		}
 
 		void upsise() {
-			if (_M_size >= _M_capacity) {
+			if (_M_size+1 >= _M_capacity) {
 				_M_capacity += alloc_size;
 				T* new_data = _alloc(_M_capacity);
 				_copy_all(new_data, _M_data);
@@ -107,9 +107,42 @@ namespace mew {
 			}
 		}
 
+		void upsise(u64 _size) {
+			if (_M_size+_size >= _M_capacity) {
+				_M_capacity += alloc_size * _size;
+				T* new_data = _alloc(_M_capacity);
+				_copy_all(new_data, _M_data);
+				if (_M_data) {
+					_dealloc(_M_data);
+				}
+				_M_data = new_data;
+			}
+		}
+
+
 		T* alloc() {
 			upsise();
 			return (T*)(_M_data) + _M_size++;
+		}
+		
+		template<typename K>
+		K* alloc() {
+			upsise(sizeof(K));
+			_M_size += sizeof(K);
+			return (K*)(_M_data) + _M_size;
+		}
+		
+		T* alloc_array(u64 _size) {
+			upsise(_size);
+			_M_size += _size;
+			return (T*)(_M_data) + _M_size;
+		}
+		
+		template<typename K>
+		K* alloc_array(u64 _size) {
+			upsise(sizeof(K) * _size);
+			_M_size += sizeof(K) * _size;
+			return (T*)(_M_data) + _M_size;
 		}
 
 		void copy(T* list, size_t size, size_t offset = 0) {

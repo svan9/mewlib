@@ -8,6 +8,7 @@
 #ifndef MEW_UTILS_LIB_SO2U
 #define MEW_UTILS_LIB_SO2U
 #include "mewlib.h"
+#include "mewtypes.h"
 #include "mewstack.hpp"
 #include "mewstring.hpp"
 #include <variant>
@@ -342,6 +343,50 @@ NumberVariant str_to_number(const char* str) {
   return 0; // Default value for int
 }
 
+const char* number_to_strv(NumberVariant number) {
+  char* out_v = nullptr;
+  
+  std::visit(overloaded{
+    [&out_v](int& i){
+      out_v = new char(sizeof(i));
+      memcpy(out_v, &i, sizeof(i));
+    },
+    [&out_v](float& i){
+      out_v = new char(sizeof(i));
+      memcpy(out_v, &i, sizeof(i));
+    },
+    [&out_v](double& i){
+      out_v = new char(sizeof(i));
+      memcpy(out_v, &i, sizeof(i));
+    },
+    [&out_v](bool& i){
+      out_v = new char(sizeof(i));
+      memcpy(out_v, &i, sizeof(i));
+    }
+  }, number);
+  return out_v;
+}
+
+int number_to_tk(NumberVariant number) {
+  enum __n {Int, Float, Double, Bool};
+  __n n;
+  std::visit(overloaded{
+    [&n](int& i){
+      n = __n::Int;
+    },
+    [&n](float& i){
+      n = __n::Float;
+    },
+    [&n](double& i){
+      n = __n::Double;
+    },
+    [&n](bool& i){
+      n = __n::Bool;
+    }
+  }, number);
+  return (int)n;
+}
+
 
 class TokenRow {
 private:
@@ -372,6 +417,21 @@ public:
 
   TokenRow& operator++() {
     c_ptr = shift_word(c_ptr);
+    return *this;
+  }
+
+  const char* Next() {
+    return shift_word(c_ptr);
+  }
+
+  const char* Current() {
+    return c_ptr;
+  }
+
+  TokenRow& SkipToStart() {
+    while (*c_ptr == '\0') {
+      ++c_ptr;
+    }
     return *this;
   }
 

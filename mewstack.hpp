@@ -197,6 +197,38 @@ public:
     copy_to(pointer, value);
     return _M_allocator.count()-1;
   }
+  
+  ////////////////////////////////////////////////////////////
+  template<typename K>
+  size_t push(K& value) {
+    MewUserAssert(sizeof(T) < sizeof(K), "cant push less type size");
+    K* pointer = _M_allocator.alloc<K>();
+    copy_to(pointer, value);
+    return _M_allocator.count()-1;
+  }
+
+  ////////////////////////////////////////////////////////////
+  template<typename K>
+  size_t push(K&& value) {
+    MewUserAssert(sizeof(T) < sizeof(K), "cant push less type size");
+    K* pointer = _M_allocator.alloc<K>();
+    copy_to(pointer, value);
+    return _M_allocator.count()-1;
+  }
+  
+  ////////////////////////////////////////////////////////////
+  template<size_t N>
+  size_t push_array(T(&value)[N]) {
+    T* pointer = _M_allocator.alloc_array<T>(N);
+    copy_to(pointer, value);
+    return _M_allocator.count()-1;
+  }
+  ////////////////////////////////////////////////////////////
+  size_t push_array(T* value, size_t _count) {
+    T* pointer = _M_allocator.alloc_array<T>(_count);
+    copy_to(pointer, value);
+    return _M_allocator.count()-1;
+  }
 
   ////////////////////////////////////////////////////////////
   size_t push(const T& value) {
@@ -205,12 +237,12 @@ public:
     return _M_allocator.count()-1;
   }
 
-  ////////////////////////////////////////////////////////////
-  size_t push(T* ptr) {
-    T* pointer = _M_allocator.alloc();
-    copy_to(pointer, *ptr);
-    return _M_allocator.count()-1;
-  }
+  // ////////////////////////////////////////////////////////////
+  // size_t push(T* ptr) {
+  //   T* pointer = _M_allocator.alloc();
+  //   copy_to(pointer, *ptr);
+  //   return _M_allocator.count()-1;
+  // }
 
   ////////////////////////////////////////////////////////////
   [[deprecated("unsafe")]]
