@@ -24,14 +24,10 @@ namespace mew {
   ///////////////////////////////////////////////////////
   bool str_is_path(const char* path) {
     std::ifstream test(path);
-    return !(!test);
+    return !(!test.is_open());
   }
 
-  inline bool is_exists(const std::string& name) {
-    std::ifstream f(name.c_str());
-    return f.good();
-  }
-  
+
   const char* executable_name() {
   #if defined(PLATFORM_POSIX) || defined(__linux__) //check defines for your setup
     std::string sp;
@@ -148,6 +144,15 @@ namespace mew {
     char* getNext(const char* element) {
       size_t idx = _M_args.indexOf((char*)element);
       MewAssert(idx != -1);
+      return _M_args.at(idx+1);
+    }
+
+    ////////////////////////////////////////////////////////////
+    char* getNextOr(const char* element, const char* repl) {
+      size_t idx = _M_args.indexOf((char*)element);
+      if (idx == -1) {
+        return repl;
+      }
       return _M_args.at(idx+1);
     }
 

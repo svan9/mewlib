@@ -19,7 +19,9 @@ namespace mew {
 template<typename T, typename _Alloc = mew::Allocator<T>>
 class stack {
 private:
+  typedef stack<T, _Alloc> self;
   _Alloc _M_allocator;
+  stack(_Alloc allocator): _M_allocator(allocator) { }
 public:
   stack(): _M_allocator(1) { } // Initialize _M_capacity
   stack(const stack<T, _Alloc>& ref): _M_allocator(ref._M_allocator) { }
@@ -38,12 +40,12 @@ public:
   }
   
   ////////////////////////////////////////////////////////////
-  size_t size() const noexcept {
+  u64 size() const noexcept {
     return _M_allocator.size();
   }
 
   ////////////////////////////////////////////////////////////
-  size_t count() const noexcept {
+  u64 count() const noexcept {
     return _M_allocator.count();
   }
 
@@ -64,7 +66,7 @@ public:
   const T* cend() const { return (const T*)_M_allocator.end(); }
 
   ////////////////////////////////////////////////////////////
-  stack(T* _array, size_t _length): _M_allocator(1U) {
+  stack(T* _array, u64 _length): _M_allocator(1U) {
     _M_allocator.copy(_array, _length);
   }
 
@@ -72,7 +74,7 @@ public:
   stack(stack<T>& ref): _M_allocator(ref._M_allocator) { }
   
   ////////////////////////////////////////////////////////////
-  stack(size_t size): _M_allocator(size) { }
+  stack(u64 size): _M_allocator(size) { }
 
   ////////////////////////////////////////////////////////////
   T* data() const noexcept {
@@ -80,7 +82,7 @@ public:
   }
 
   ////////////////////////////////////////////////////////////
-  void resize(size_t new_size, bool ignore_size = false) {
+  void resize(u64 new_size, bool ignore_size = false) {
     if (ignore_size) {
       _M_allocator.reserve(new_size);
     } else {
@@ -89,14 +91,19 @@ public:
   }
   
   ////////////////////////////////////////////////////////////
-  void reserve(size_t size) {
+  void reserve(u64 size) {
     _M_allocator.reserve(size);
   }
 
   ////////////////////////////////////////////////////////////
   bool has(int idx) const noexcept {
-    size_t real_idx = get_real_idx(idx);
-    return real_idx < size();
+    u64 real_idx = get_real_idx(idx);
+    return real_idx < count();
+  }
+
+  ////////////////////////////////////////////////////////////
+  bool has(u64 idx) const noexcept {
+    return idx < count();
   }
 
   ////////////////////////////////////////////////////////////
@@ -120,12 +127,12 @@ public:
   }
 
   ////////////////////////////////////////////////////////////
-  T& at(size_t idx) const {
+  T& at(u64 idx) const {
     MewAssert(has(idx));
     return data()[idx];
   }
   ////////////////////////////////////////////////////////////
-  T& at(size_t idx, size_t offset) const {
+  T& at(u64 idx, u64 offset) const {
     MewAssert(has(idx) && idx-(offset/sizeof(T)) >= 0);
     T* _d = &(data()[idx]);
     _d = (T*)((byte*)_d - offset);
@@ -133,19 +140,19 @@ public:
   }
 
   ////////////////////////////////////////////////////////////
-  size_t get_real_idx(int idx) const noexcept {
+  u64 get_real_idx(int idx) const noexcept {
     MewUserAssert(count() != 0, "stack is empty");
     if (idx == 0) {
       return 0;
     }
-    size_t real_idx;
+    u64 real_idx;
     real_idx = mod(idx, count());
     real_idx = (count() + real_idx) % count();
     return real_idx;
   }
 
   ////////////////////////////////////////////////////////////
-  size_t rget_real_idx_AT(int idx) const noexcept {
+  u64 rget_real_idx_AT(int idx) const noexcept {
     if (idx == 0) {
       return 0;
     }
@@ -163,16 +170,15 @@ public:
   }
 
   ////////////////////////////////////////////////////////////
-  [[deprecated("unsafe")]]
-  T& at(int idx, size_t offset) const {
-    return at(get_real_idx(idx), offset);
+  T& at(int idx, u64 offset) const {
+    return at(get_real_idx(idx-offset));
   }
 
   ////////////////////////////////////////////////////////////
   [[deprecated("unsafe")]]
   byte* rat(int offset) const {
     MewUserAssert(count() != 0, "stack is empty");
-    size_t real_idx = rget_real_idx_AT(offset);
+    u64 real_idx = rget_real_idx_AT(offset);
     MewUserAssert(real_idx < count(), "index out of range");
     T* _d = &(data()[real_idx]);
     _d = (T*)((byte*)_d - offset);
@@ -192,7 +198,7 @@ public:
   }
 
   ////////////////////////////////////////////////////////////
-  size_t push(T&& value) {
+  u64 push(T&& value) {
     T* pointer = _M_allocator.alloc();
     copy_to(pointer, value);
     return _M_allocator.count()-1;
@@ -200,45 +206,45 @@ public:
   
   ////////////////////////////////////////////////////////////
   template<typename K>
-  size_t push(K& value) {
+  u64 push(K& value) {
     MewUserAssert(sizeof(T) < sizeof(K), "cant push less type size");
-    K* pointer = _M_allocator.alloc<K>();
+    K* pointer = _M_allocator.template alloc<K>();
     copy_to(pointer, value);
     return _M_allocator.count()-1;
   }
 
   ////////////////////////////////////////////////////////////
   template<typename K>
-  size_t push(K&& value) {
+  u64 push(K&& value) {
     MewUserAssert(sizeof(T) < sizeof(K), "cant push less type size");
-    K* pointer = _M_allocator.alloc<K>();
+    K* pointer = _M_allocator.template alloc<K>();
     copy_to(pointer, value);
     return _M_allocator.count()-1;
   }
   
   ////////////////////////////////////////////////////////////
-  template<size_t N>
-  size_t push_array(T(&value)[N]) {
-    T* pointer = _M_allocator.alloc_array<T>(N);
+  template<u64 N>
+  u64 push_array(T(&value)[N]) {
+    T* pointer = _M_allocator.template alloc_array<T>(N);
     copy_to(pointer, value);
     return _M_allocator.count()-1;
   }
   ////////////////////////////////////////////////////////////
-  size_t push_array(T* value, size_t _count) {
-    T* pointer = _M_allocator.alloc_array<T>(_count);
+  u64 push_array(T* value, u64 _count) {
+    T* pointer = _M_allocator.template alloc_array<T>(_count);
     copy_to(pointer, value);
     return _M_allocator.count()-1;
   }
 
   ////////////////////////////////////////////////////////////
-  size_t push(const T& value) {
+  u64 push(const T& value) {
     T* pointer = _M_allocator.alloc();
     copy_to(pointer, value);
     return _M_allocator.count()-1;
   }
 
   // ////////////////////////////////////////////////////////////
-  // size_t push(T* ptr) {
+  // u64 push(T* ptr) {
   //   T* pointer = _M_allocator.alloc();
   //   copy_to(pointer, *ptr);
   //   return _M_allocator.count()-1;
@@ -246,7 +252,7 @@ public:
 
   ////////////////////////////////////////////////////////////
   [[deprecated("unsafe")]]
-  size_t push(const T& value, size_t offset) {
+  u64 push(const T& value, u64 offset) {
     T* pointer = _M_allocator.alloc(offset);
     memcpy(pointer, &value, sizeof(value));
     return offset+1;
@@ -254,21 +260,21 @@ public:
 
   ////////////////////////////////////////////////////////////
   template<typename ...Args>
-  size_t emplace(Args&&... args) {
+  u64 emplace(Args&&... args) {
     T* pointer = _M_allocator.alloc();
     new (pointer) T(std::forward<Args>(args)...);
     return _M_allocator.count() - 1;
   }
 
   ////////////////////////////////////////////////////////////
-  size_t insert(const T& value, size_t idx) {
+  u64 insert(const T& value, u64 idx) {
     T* pointer = _M_allocator.alloc(idx);
     memcpy(pointer, &value, sizeof(value));
     return idx+1;
   }
   
   ////////////////////////////////////////////////////////////
-  size_t insert(T&& value, size_t idx) {
+  u64 insert(T&& value, u64 idx) {
     T* pointer = _M_allocator.alloc(idx);
     memcpy(pointer, &value, sizeof(value));
     return idx+1;
@@ -281,7 +287,7 @@ public:
     return ptr;
   }
   ////////////////////////////////////////////////////////////
-  stack<T, _Alloc>& copy(T* _array, size_t _length, size_t offset = 0) {
+  stack<T, _Alloc>& copy(T* _array, u64 _length, u64 offset = 0) {
     this->_M_allocator.copy(_array, _length, offset = 0);
     return *this;
   }
@@ -306,6 +312,16 @@ public:
     _M_allocator.pop();
     return t;
   }
+
+  ////////////////////////////////////////////////////////////
+  void vpop() {
+    _M_allocator.pop();
+  }
+
+  ////////////////////////////////////////////////////////////
+  void asc_pop(u64 count = 1) {
+    _M_allocator.reduceSize(count);
+  }
   
   ////////////////////////////////////////////////////////////
   template<typename K>
@@ -323,8 +339,13 @@ public:
   }
 
   ////////////////////////////////////////////////////////////
-  void erase(size_t start, size_t size = 1) {
+  void erase(u64 start, u64 size = 1) {
     _M_allocator.erase(start, size);
+  }
+  
+  ////////////////////////////////////////////////////////////
+  void eraseAfter(u64 start) {
+    _M_allocator.eraseAfter(start);
   }
   
   ////////////////////////////////////////////////////////////
@@ -334,8 +355,8 @@ public:
 
   ////////////////////////////////////////////////////////////
   void erase(T& value) {
-    size_t idx = indexOf(value);
-    if (idx != (size_t)(-1)) {
+    u64 idx = indexOf(value);
+    if (idx != (u64)(-1)) {
       erase(idx, 1);
     }
   }
@@ -361,25 +382,25 @@ public:
   }
 
   ////////////////////////////////////////////////////////////
-  size_t indexOf(const T& value) const {
+  u64 indexOf(const T& value) const {
     for (int i = 0; i < size(); ++i) {
       T& cur_el = _M_allocator.begin()[i];
       if (value == cur_el) {
         return i;
       }
     }
-    return (size_t)(-1);
+    return (u64)(-1);
   }
 
   ////////////////////////////////////////////////////////////
-  size_t indexOf(T&& value) const {
+  u64 indexOf(T&& value) const {
     for (int i = 0; i < size(); ++i) {
       T& cur_el = _M_allocator.begin()[i];
       if (value == cur_el) {
         return i;
       }
     }
-    return (size_t)(-1);
+    return (u64)(-1);
   }
 
   ////////////////////////////////////////////////////////////
@@ -389,16 +410,22 @@ public:
 
   ////////////////////////////////////////////////////////////
   void pushIfNotExists(T&& value) {
-    if (indexOf(value) != (size_t)(-1)) {
+    if (indexOf(value) != (u64)(-1)) {
       push(value);
     }
   }
 
   ////////////////////////////////////////////////////////////
   void pushIfNotExists(const T& value) {
-    if (indexOf(value) != (size_t)(-1)) {
+    if (indexOf(value) != (u64)(-1)) {
       push(value);
     }
+  }
+  
+  ////////////////////////////////////////////////////////////
+  self shiftAfter(u64 start) {
+    auto allocator = _M_allocator.shiftAfter(start);
+    return self(allocator);
   }
 
 
@@ -415,7 +442,7 @@ public:
       (0 != memcmp(st.begin(), list.begin(), st.size()));
   }
 
-  typedef void(*each_fn)(T&, size_t);
+  typedef void(*each_fn)(T&, u64);
   typedef void(*printer)(T);
   
   ////////////////////////////////////////////////////////////
@@ -432,6 +459,98 @@ public:
     }
   }
 };
+
+
+template<typename T>
+void writeArray(std::ofstream& file, T* arr, u64 size) {
+  writeBytes(file, size);
+  writeBytes(file, arr, size);
+}
+
+template<typename T>
+u64 readArray(std::ifstream& file, T* arr = nullptr) {
+  u64 size = mew::readUInt64(file);
+  if (arr) {
+    delete arr;
+  }
+  arr = new T[size];
+  for (u64 i = 0; i < size; ++i) {
+    file >> arr[i];
+  }
+  return size;
+}
+
+inline void writeString(std::ofstream& file, const char* str) {
+  writeArray(file, str, strlen(str)+1);
+}
+
+inline u64 readString(std::ifstream& file, char* str) {
+  return readArray(file, str);
+}
+
+template<typename T, typename _Alloc>
+void writeStack(std::ofstream& file, stack<T, _Alloc>& _stack) {
+  writeBytes(file, _stack.count());
+  writeBytes(file, _stack.begin(), _stack.size());
+}
+
+template<typename T, typename _Alloc>
+void readStack(std::ifstream& file, stack<T, _Alloc>& _stack) {
+  u64 size = mew::readUInt64(file);
+  for (u64 i = 0; i < size; ++i) {
+    T val;
+    file >> val;
+    _stack.push(val);
+  }
+}
+
+template<typename T, typename _Alloc>
+stack<T, _Alloc> readStack(std::ifstream& file) {
+  stack<T, _Alloc> _stack;
+  u64 size = mew::readUInt64(file);
+  for (u64 i = 0; i < size; ++i) {
+    T val;
+    file >> val;
+    _stack.push(val);
+  }
+}
+
+
+template<typename T>
+using stackWriter_t = void(*)(std::ofstream&, T&);
+template<typename T>
+using stackReader_t = T(*)(std::ifstream&);
+
+template<typename T, typename _Alloc>
+stack<T, _Alloc> readStack(stack<const char*> pathes, stackReader_t<T> reader) {
+  stack<T, _Alloc> _stack;
+  for (u64 i = 0; i < _stack.count(); ++i) {
+    std::ifstream& file(std::ios::in | std::ios::binary);
+    file.seekg(std::ios::beg);
+    MewAssert(file.is_open());
+    file >> std::noskipws;
+    _stack.push(reader(file));
+    file.close();
+  }
+  return _stack;
+}
+
+
+template<typename T, typename _Alloc>
+void writeStack(std::ofstream& file, stack<T, _Alloc>& _stack, stackWriter_t<T> writer) {
+  writeBytes(file, _stack.count());
+  for (u64 i = 0; i < _stack.count(); ++i) {
+    writer(_stack.at(i));
+  }
+}
+
+template<typename T, typename _Alloc>
+void readStack(std::ifstream& file, stack<T, _Alloc>& _stack, stackReader_t<T> reader) {
+  u64 size = mew::readUInt64(file);
+  for (u64 i = 0; i < size; ++i) {
+    _stack.push(reader(file));
+  }
+}
 
 }
 

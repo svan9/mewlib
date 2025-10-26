@@ -2,6 +2,7 @@
 #define MEW_ALLOCATOR_HPP
 
 #include "mewlib.h"
+#include "mewtypes.h"
 // #include "mewmalloc.hpp"
 
 namespace mew {
@@ -211,6 +212,14 @@ namespace mew {
 			}
 		}
 
+		void reduceSize(u64 count) {
+			if (count <= _M_size) {
+				_M_size -= count;
+			} else {
+				_M_size = 0;
+			}
+		}
+
 		void erase(size_t start, size_t size = 1) {
 			MewUserAssert(size <= _M_size, "Index out of range");
 			T* begin = (T*)(_M_data) + start;
@@ -218,6 +227,25 @@ namespace mew {
 			size_t count = _M_size - size;
 			memmove(begin, end, count * sizeof(T));
 			_M_size -= size;
+		}
+		
+		void eraseAfter(size_t start) {
+			u64 size = count()-start; 
+			MewUserAssert(size <= _M_size, "Index out of range");
+			T* begin = (T*)(_M_data) + start;
+			T* end = (T*)(begin) + size;
+			size_t count = _M_size - size;
+			memmove(begin, end, count * sizeof(T));
+			_M_size -= size;
+		}
+		
+		self shiftAfter(size_t start) {
+			u64 _size = count()-start; 
+			self nal(_size);
+			T* array = nal.alloc_array(_size);
+			T* begin = (T*)(_M_data) + start;
+			memcpy(array, begin, sizeof(T)*_size);
+			return nal;
 		}
 
 		void resize(size_t new_size) {

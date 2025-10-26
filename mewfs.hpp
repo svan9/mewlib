@@ -29,11 +29,11 @@
 #define PATH_MAX 512
 #endif
 
-
-
 #endif
 
 namespace mew::fs {
+	
+	
 
 	#ifdef _WIN32
 		const char* GetAbsolutePath(const char* path) {

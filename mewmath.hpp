@@ -669,13 +669,7 @@ namespace mew {
 		agg_adgt();
 		void* __a = &b;
 		void* __b = &a;
-		size_t __less = sizeof(T);
-		if (sizeof(T) >= sizeof(K)) {
-			__a = &a;
-			__b = &b;
-			__less = sizeof(K);
-		}
-		memcpy(__a, __b, __less);
+		memcpy(__a, __b, sizeof(T));
 		return a;
 	}
 

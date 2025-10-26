@@ -445,7 +445,6 @@ public:
     return strcmp(c_ptr, str);
   }
 
-  
 };
 std::filesystem::path GetAbsPath(const char* path) { 
   std::filesystem::path __path(path);

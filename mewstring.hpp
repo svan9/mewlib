@@ -8,6 +8,7 @@
 #ifndef MEW_STRING_LIB_SO2U
 #define MEW_STRING_LIB_SO2U
 #include "mewlib.h"
+#include "mewtypes.h"
 
 #ifndef __cplusplus
 #error cpp only
@@ -124,6 +125,14 @@ namespace string {
 				buffer[0] = '\0';
 			}
 		}
+
+		template<typename T>
+		StringBuilder& AppendStruct(T& str) {
+			char buffer[sizeof(T)+1];
+			memcpy(buffer, &str, sizeof(str));
+			buffer[sizeof(T)] = 0;
+			return Append(buffer);
+		}
 			
 		StringBuilder& operator+=(const char* c) {
 			return Append(c);
@@ -131,6 +140,13 @@ namespace string {
 			
 		StringBuilder& operator+=(char c) {
 			return Append(c);
+		}
+
+		StringBuilder& operator+=(u64 c) {
+			char buffer[sizeof(c)+1];
+			memcpy(buffer, &c, sizeof(c));
+			buffer[sizeof(c)] = '\0';
+			return Append(buffer);
 		}
 			
 		friend StringBuilder& operator+(StringBuilder& l, char r) {

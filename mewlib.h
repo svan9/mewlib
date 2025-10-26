@@ -83,7 +83,8 @@
 #define MewNot() MewUserAssert(false, "not")
 #define MewNoImpl() MewUserAssert(false, "not implemented")
 #define MewNotImpl() MewUserAssert(false, "not implemented")
-#define MewWarn(fmt, ...) printf("-- MEW WARN " fmt " --\n", __VA_ARGS__)
+#define MewWarn(fmt, ...) printf(fmt, __VA_ARGS__)
+#define MewForUserAssert(expr, fmt, ...) if(!(expr)) {printf("-- MEW WARN " fmt " --\n", __VA_ARGS__);}
 #define MewWarnMessage(fmt) printf("-- MEW WARN " fmt " --\n")
 
 #ifndef DISABLE_MEW_PING
@@ -120,25 +121,30 @@
 #define MEW_SBOOL(expr) ((expr)? "true": "false")
 
 #define MEW_UNUSE(expr) (void)(expr)
-
+#ifdef __cplusplus
+#define MEW_MALLOC(type) new type()
+#else
+#define MEW_MALLOC(type) (type*)malloc(sizeof(type))
+#endif
 #include <string.h>
+#include "mewtypes.h"
 
 char* scopy(const char* str, size_t len) {
-	char* out = (char*)malloc(len+1);
+	char* out = (char*)MEW_MALLOC(len+1);
 	memcpy(out, str, len);
 	out[len] = '\0';
 	return out;
 }
 
 wchar_t* scopy(const wchar_t* str, size_t len) {
-	wchar_t* out = (wchar_t*)malloc((len+1) * sizeof(wchar_t));
+	wchar_t* out = (wchar_t*)MEW_MALLOC((len+1) * sizeof(wchar_t));
 	memcpy(out, str, len*sizeof(wchar_t));
 	out[len] = L'\0';
 	return out;
 }
 
 void* rcopy(void* ptr, size_t len) {
-	void* out = (char*)malloc(len);
+	void* out = (char*)MEW_MALLOC(len);
 	memcpy(out, ptr, len);
 	return out;
 }
@@ -450,6 +456,12 @@ namespace mew {
 		file.read(reinterpret_cast<char*>(&value), sizeof(value));
 		return value;
 	}
+
+	u64 readUInt64(std::ifstream& file) {
+		u64 value;
+		file.read(reinterpret_cast<char*>(&value), sizeof(value));
+		return value;
+	}
 	template<typename T>
 	void readBytes(std::ifstream& file, T& out) {
 		file.read(reinterpret_cast<char*>(&out), sizeof(out));
@@ -501,6 +513,14 @@ namespace mew {
       __path = std_fs::absolute(__path.lexically_normal());
     }
     return getIfStream(__path);
+	}
+
+	std::filesystem::path GetAbsPath(const char* path) {
+		std_fs::path __path(path);
+    if (!__path.is_absolute()) {
+      __path = std_fs::absolute(__path.lexically_normal());
+    }
+    return __path;
 	}
 
 	const char* concatPath(const char* first, const char* second) {
