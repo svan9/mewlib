@@ -1,4 +1,4 @@
-project(mew_socket_test)
+project(mew_db_test)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}") # -Ofast
 
