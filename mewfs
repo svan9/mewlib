@@ -1,0 +1,39 @@
+#ifndef MEW_FS_LIB_SO2U
+#define MEW_FS_LIB_SO2U
+
+#include "mewlib.h"
+#include "mewtypes.h"
+#include "mewstring"
+#include <sys/types.h>
+#include <sys/stat.h>
+
+#include "mewpack"
+#ifndef _WIN32
+#include <unistd.h>
+#endif
+#ifdef _WIN32
+#define stat _stat64
+#include <fileapi.h>
+// extern dword GetFullPathNameA(cstr lpFileName, dword nBufferLength, cstr lpBuffer, cstr *lpFilePart);
+// extern dword GetFullPathNameW(cwstr lpFileName, dword nBufferLength, cwstr lpBuffer, wstr *lpFilePart);
+
+#endif
+
+#ifndef PATH_MAX
+
+#ifdef _WIN32
+#define PATH_MAX 260
+#else
+#define PATH_MAX 512
+#endif
+
+#endif
+
+namespace mew::fs {
+	
+	
+};
+
+#include "mewpop"
+
+#endif

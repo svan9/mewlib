@@ -2,7 +2,7 @@
 #define MEW_STATE_HPP
 
 #include "mewtypes.h"
-#include "mewstack.hpp"
+#include "mewstack"
 #include <typeinfo>
 
 namespace mew {

@@ -3,17 +3,16 @@
 
 #include "mewlib.h"
 #include "mewtypes.h"
-// #include "mewmalloc.hpp"
 
 namespace mew {
-	template<typename T, size_t alloc_size>
+	template<typename T, u64 alloc_size>
 	class AllocatorBase {
 	private:
 		typedef AllocatorBase<T, alloc_size> self;
-		size_t _M_size, _M_capacity;
+		u64 _M_size, _M_capacity;
 		T* _M_data = nullptr;
 
-		static T* _alloc(size_t count) {
+		static T* _alloc(u64 count) {
 			byte* ptr = new byte[count*sizeof(T)];
 			memset(ptr, 0, count*sizeof(T));
 			return (T*)ptr;
@@ -29,7 +28,7 @@ namespace mew {
 		}
 
 		void _copy_all(T* dist, T* src) {
-			for (size_t i = 0; i < _M_size; ++i) {
+			for (u64 i = 0; i < _M_size; ++i) {
 				T* to = dist+i;
 				T* from = src+i;
 				copy_to(to, *from);
@@ -39,7 +38,7 @@ namespace mew {
 	public:
 		AllocatorBase() {}
 		
-		AllocatorBase(size_t count) : _M_capacity(count*alloc_size), _M_size(0) {
+		AllocatorBase(u64 count) : _M_capacity(count*alloc_size), _M_size(0) {
 			_M_data = _alloc(count*alloc_size);
 		}
 		
@@ -68,7 +67,7 @@ namespace mew {
 			return *this;
 		}
 		
-		constexpr size_t AllocSize() const noexcept {
+		constexpr u64 AllocSize() const noexcept {
 			return alloc_size;
 		}
 
@@ -78,15 +77,15 @@ namespace mew {
 			}
 		}
 
-		size_t size() const noexcept {
+		u64 size() const noexcept {
 			return _M_size * sizeof(T);
 		}
 
-		size_t count() const noexcept {
+		u64 count() const noexcept {
 			return _M_size;
 		}
 
-		T* alloc(size_t at_before) {
+		T* alloc(u64 at_before) {
 			upsise();
 			MewUserAssert(at_before <= _M_size, "Index out of range");
 
@@ -94,6 +93,30 @@ namespace mew {
 			memmove(insert_pos + 1, insert_pos, (_M_size - at_before) * sizeof(T));
 			++_M_size;
 			return insert_pos;
+		}
+
+		self concat(self other) {
+			u64 new_size = other._M_size + _M_size;
+			T* new_data = new T[new_size];
+			memcpy(new_data, _M_data, size());
+			memcpy(new_data+_M_size, other._M_data, other.size());
+			_dealloc(_M_data);
+			_M_data = new_data;
+			_M_size = new_size;
+			_M_capacity = new_size;
+			return *this;
+		}
+
+		self concat_front(self other) {
+			u64 new_size = other._M_size + _M_size;
+			T* new_data = new T[new_size];
+			memcpy(new_data, other._M_data, other.size());
+			memcpy(new_data+other._M_size, _M_data, size());
+			_dealloc(_M_data);
+			_M_data = new_data;
+			_M_size = new_size;
+			_M_capacity = new_size;
+			return *this;
 		}
 
 		void upsise() {
@@ -146,7 +169,7 @@ namespace mew {
 			return (T*)(_M_data) + _M_size;
 		}
 
-		void copy(T* list, size_t size, size_t offset = 0) {
+		void copy(T* list, u64 size, u64 offset = 0) {
 			if (_M_size + size + offset > _M_capacity) {
 				_M_capacity += ((int)((_M_size + size + offset) / alloc_size)+1) * alloc_size;
 				T* new_data = _alloc(_M_capacity);
@@ -220,26 +243,26 @@ namespace mew {
 			}
 		}
 
-		void erase(size_t start, size_t size = 1) {
+		void erase(u64 start, u64 size = 1) {
 			MewUserAssert(size <= _M_size, "Index out of range");
 			T* begin = (T*)(_M_data) + start;
 			T* end = (T*)(begin) + size;
-			size_t count = _M_size - size;
+			u64 count = _M_size - size;
 			memmove(begin, end, count * sizeof(T));
 			_M_size -= size;
 		}
 		
-		void eraseAfter(size_t start) {
+		void eraseAfter(u64 start) {
 			u64 size = count()-start; 
 			MewUserAssert(size <= _M_size, "Index out of range");
 			T* begin = (T*)(_M_data) + start;
 			T* end = (T*)(begin) + size;
-			size_t count = _M_size - size;
+			u64 count = _M_size - size;
 			memmove(begin, end, count * sizeof(T));
 			_M_size -= size;
 		}
 		
-		self shiftAfter(size_t start) {
+		self shiftAfter(u64 start) {
 			u64 _size = count()-start; 
 			self nal(_size);
 			T* array = nal.alloc_array(_size);
@@ -248,10 +271,10 @@ namespace mew {
 			return nal;
 		}
 
-		void resize(size_t new_size) {
+		void resize(u64 new_size) {
 			if (new_size > _M_capacity) {
 				_M_capacity = new_size * sizeof(T);
-				void* new_data = new T[_M_capacity];
+				T* new_data = new T[_M_capacity];
 				memcpy(new_data, _M_data, _M_size * sizeof(T));
 				if (_M_data) {
 					_dealloc(_M_data);
@@ -261,10 +284,10 @@ namespace mew {
 			_M_size = new_size;
 		}
 
-		void reserve(size_t size) {
+		void reserve(u64 size) {
 			if (size > _M_capacity) {
 				_M_capacity = size * sizeof(T);
-				void* new_data = new T[_M_capacity];
+				T* new_data = new T[_M_capacity];
 				memcpy(new_data, _M_data, _M_size * sizeof(T));
 				if (_M_data) {
 					_dealloc(_M_data);
@@ -295,7 +318,7 @@ namespace mew {
 			}
 		}
 		
-		void pop(size_t size) {
+		void pop(u64 size) {
 			if (_M_size*sizeof(T) > size) {
 				_M_size -= size;
 			} else {

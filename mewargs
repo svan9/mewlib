@@ -8,8 +8,8 @@
 #ifndef MEW_ARGS_LIB_SO2U
 #define MEW_ARGS_LIB_SO2U
 #include "mewlib.h"
-#include "mewstack.hpp"
-#include "mewstring.hpp"
+#include "mewstack"
+#include "mewstring"
 #include <iostream>
 #include <fstream>
 #ifndef MEWLIB_NO_WINDOWS
@@ -151,7 +151,7 @@ namespace mew {
     char* getNextOr(const char* element, const char* repl) {
       size_t idx = _M_args.indexOf((char*)element);
       if (idx == -1) {
-        return repl;
+        return (char*)repl;
       }
       return _M_args.at(idx+1);
     }

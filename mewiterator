@@ -8,7 +8,7 @@
 #ifndef MEW_ITERATOR_LIB_SO2U
 #define MEW_ITERATOR_LIB_SO2U
 #include "mewlib.h"
-#include "mewmath.hpp"
+#include "mewmath"
 
 namespace mew {
 

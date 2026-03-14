@@ -9,12 +9,157 @@
 #define MEW_STACK_LIB_SO2U
 #include <initializer_list>
 #include "mewlib.h"
-#include "mewmath.hpp"
-#include "mewiterator.hpp"
-#include "mewallocator.hpp"
+#include "mewmath"
+#include "mewiterator"
+#include "mewallocator"
 #include <string.h>
 
 namespace mew {
+
+  
+template<typename T, size_t alloc_size = 1U>
+class list {
+private:
+  size_t _M_size, _M_capacity;
+  T* data = nullptr;
+public:
+  ////////////////////////////////////////////////////////////
+  list(): _M_capacity(sizeof(T)), _M_size(0) {
+    data = (T*)malloc(_M_capacity);
+  }
+
+  ////////////////////////////////////////////////////////////
+  ~list() {
+    free(data);
+  }
+
+  ////////////////////////////////////////////////////////////
+  void resize(size_t new_size, bool ignore_size = false) {
+    new_size *= alloc_size;
+    data = (T*)realloc(data, new_size);
+    if (!ignore_size && _M_size > new_size) {
+      _M_size = new_size;
+    }
+    _M_capacity = new_size;
+  }
+  
+  ////////////////////////////////////////////////////////////
+  void reserve(size_t size) {
+    resize((_M_capacity+size)*sizeof(T), true);
+  }
+
+  ////////////////////////////////////////////////////////////
+  void upsize_if_needs() {
+    if ((_M_size+1)*sizeof(T) > _M_capacity) {
+      resize((_M_size+1)*sizeof(T));
+    }
+  }
+
+  ////////////////////////////////////////////////////////////
+  bool has(int idx) const noexcept {
+    size_t real_idx = get_real_idx(idx);
+    return real_idx < _M_size;
+  }
+
+  ////////////////////////////////////////////////////////////
+  T& at(size_t idx) {
+    MewAssert(has(idx));
+    return data[idx];
+  }
+
+  ////////////////////////////////////////////////////////////
+  size_t get_real_idx(int idx) const noexcept {
+    size_t real_idx;
+    real_idx = mod(idx, _M_size);
+    real_idx = (_M_size + real_idx) % _M_size;
+    return real_idx;
+  }
+
+  ////////////////////////////////////////////////////////////
+  T& at(int idx) {
+    return at(get_real_idx(idx));
+  }
+
+  ////////////////////////////////////////////////////////////
+  T& operator[](int idx) {
+    return at(idx);
+  }
+
+  ////////////////////////////////////////////////////////////
+  size_t data_size() const noexcept {
+    return (sizeof(T)*_M_size);
+  }
+
+  ////////////////////////////////////////////////////////////
+  size_t size() const noexcept {
+    return _M_size;
+  }
+
+  ////////////////////////////////////////////////////////////
+  size_t push(T&& value) {
+    upsize_if_needs();
+    T* pointer = data+_M_size;
+    memcpy(pointer, &value, sizeof(value));
+    _M_size++;
+    return _M_size-1;
+  }
+
+  ////////////////////////////////////////////////////////////
+  size_t push(const T& value) {
+    upsize_if_needs();
+    memcpy(data+_M_size, &value, sizeof(value));
+    _M_size++;
+    return _M_size-1;
+  }
+
+  ////////////////////////////////////////////////////////////
+  T top() {
+    return at(-1);
+  }
+
+  ////////////////////////////////////////////////////////////
+  T pop() {
+    T t = top();
+    _M_size -= 1;
+    return t;
+  }
+
+  ////////////////////////////////////////////////////////////
+  void erase(size_t start, size_t size = 1) {
+    MewAssert(size <= _M_size);
+    T* begin = (T*)(data+start);
+    T* end = (T*)(data+start+size);
+    memmove(begin, end, size*sizeof(T));
+    _M_size -= size;
+  }
+  
+  ////////////////////////////////////////////////////////////
+  void erase(int idx) {
+    erase(get_real_idx(idx));
+  }
+
+  ////////////////////////////////////////////////////////////
+  bool empty() const noexcept {
+    return _M_size == 0;
+  }
+
+  ////////////////////////////////////////////////////////////
+  void clear() {
+    _M_size = 0;
+    memset(data, 0, _M_capacity);
+  }
+
+  ////////////////////////////////////////////////////////////
+  size_t indexOf(T& value) {
+    for (int i = 0; i < _M_size; ++i) {
+      T& cur_el = data[i];
+      if (0 == memcmp(&value, &cur_el, sizeof(T))) {
+        return i;
+      }
+    }
+    return (size_t)(-1);
+  }
+};
 
 template<typename T, typename _Alloc = mew::Allocator<T>>
 class stack {
@@ -206,21 +351,32 @@ public:
   
   ////////////////////////////////////////////////////////////
   template<typename K>
-  u64 push(K& value) {
-    MewUserAssert(sizeof(T) < sizeof(K), "cant push less type size");
-    K* pointer = _M_allocator.template alloc<K>();
-    copy_to(pointer, value);
+  u64 push_n(K& value) {
+    // MewUserAssert(sizeof(T) <= sizeof(K), "cant push less type size");
+    if (sizeof(K) == sizeof(T)) {
+      return push((T&)value);
+    }
+    if (sizeof(K) < sizeof(T)) {
+      return push((T&)value);
+    }
+    float _parts = sizeof(K)/sizeof(T);
+    u64 parts = (u64)_parts;
+    bool remnant = (_parts-parts) != 0.0f;
+    for (u64 i = 0; i < parts; ++i) {
+      T* n = ((T*)(&value))+i;
+      push(*n);
+    }
     return _M_allocator.count()-1;
   }
 
-  ////////////////////////////////////////////////////////////
-  template<typename K>
-  u64 push(K&& value) {
-    MewUserAssert(sizeof(T) < sizeof(K), "cant push less type size");
-    K* pointer = _M_allocator.template alloc<K>();
-    copy_to(pointer, value);
-    return _M_allocator.count()-1;
-  }
+  // ////////////////////////////////////////////////////////////
+  // template<typename K>
+  // u64 push(K&& value) {
+  //   MewUserAssert(sizeof(T) < sizeof(K), "cant push less type size");
+  //   K* pointer = _M_allocator.template alloc<K>();
+  //   copy_to(pointer, value);
+  //   return _M_allocator.count()-1;
+  // }
   
   ////////////////////////////////////////////////////////////
   template<u64 N>
@@ -332,6 +488,17 @@ public:
     _M_allocator.pop(sizeof(K));
     return t;
   }
+
+
+  ////////////////////////////////////////////////////////////
+  void concat(stack<T, _Alloc>& st) {
+    _M_allocator.concat(st._M_allocator);
+  }
+  
+  ////////////////////////////////////////////////////////////
+  void concat_front(stack<T, _Alloc>& st) {
+    _M_allocator.concat_front(st._M_allocator);
+  } 
 
   ////////////////////////////////////////////////////////////
   void erase() {
@@ -462,36 +629,37 @@ public:
 
 
 template<typename T>
+using stackWriter_t = void(*)(std::ofstream&, T&);
+template<typename T>
+using stackReader_t = T(*)(std::ifstream&);
+template<typename T>
 void writeArray(std::ofstream& file, T* arr, u64 size) {
   writeBytes(file, size);
-  writeBytes(file, arr, size);
+  file.write((char*)arr, size * sizeof(T));
+  // writeBytes(file, arr, size * sizeof(T));
 }
 
 template<typename T>
-u64 readArray(std::ifstream& file, T* arr = nullptr) {
+u64 readArray(std::ifstream& file, T*& arr) {
   u64 size = mew::readUInt64(file);
-  if (arr) {
-    delete arr;
-  }
+  if (arr) delete[] arr;
   arr = new T[size];
-  for (u64 i = 0; i < size; ++i) {
-    file >> arr[i];
-  }
+  file.read((char*)arr, size * sizeof(T));
   return size;
 }
 
 inline void writeString(std::ofstream& file, const char* str) {
-  writeArray(file, str, strlen(str)+1);
+  writeArray(file, str, strlen(str) + 1);
 }
 
-inline u64 readString(std::ifstream& file, char* str) {
+inline u64 readString(std::ifstream& file, char*& str) {
   return readArray(file, str);
 }
 
 template<typename T, typename _Alloc>
 void writeStack(std::ofstream& file, stack<T, _Alloc>& _stack) {
   writeBytes(file, _stack.count());
-  writeBytes(file, _stack.begin(), _stack.size());
+  writeBytes(file, _stack.begin(), _stack.count() * sizeof(T));
 }
 
 template<typename T, typename _Alloc>
@@ -499,7 +667,7 @@ void readStack(std::ifstream& file, stack<T, _Alloc>& _stack) {
   u64 size = mew::readUInt64(file);
   for (u64 i = 0; i < size; ++i) {
     T val;
-    file >> val;
+    file.read((char*)&val, sizeof(T));
     _stack.push(val);
   }
 }
@@ -510,37 +678,17 @@ stack<T, _Alloc> readStack(std::ifstream& file) {
   u64 size = mew::readUInt64(file);
   for (u64 i = 0; i < size; ++i) {
     T val;
-    file >> val;
+    file.read((char*)&val, sizeof(T));
     _stack.push(val);
-  }
-}
-
-
-template<typename T>
-using stackWriter_t = void(*)(std::ofstream&, T&);
-template<typename T>
-using stackReader_t = T(*)(std::ifstream&);
-
-template<typename T, typename _Alloc>
-stack<T, _Alloc> readStack(stack<const char*> pathes, stackReader_t<T> reader) {
-  stack<T, _Alloc> _stack;
-  for (u64 i = 0; i < _stack.count(); ++i) {
-    std::ifstream& file(std::ios::in | std::ios::binary);
-    file.seekg(std::ios::beg);
-    MewAssert(file.is_open());
-    file >> std::noskipws;
-    _stack.push(reader(file));
-    file.close();
   }
   return _stack;
 }
-
 
 template<typename T, typename _Alloc>
 void writeStack(std::ofstream& file, stack<T, _Alloc>& _stack, stackWriter_t<T> writer) {
   writeBytes(file, _stack.count());
   for (u64 i = 0; i < _stack.count(); ++i) {
-    writer(_stack.at(i));
+    writer(file, _stack.at(i));
   }
 }
 
@@ -552,6 +700,140 @@ void readStack(std::ifstream& file, stack<T, _Alloc>& _stack, stackReader_t<T> r
   }
 }
 
+template<typename T>
+class matrix {
+private:
+  mew::stack<T> _M_data;
+  size_t _M_width, _M_height;
+public:
+  ////////////////////////////////////////////////////////////
+  matrix(size_t _width, size_t _height): _M_width(_width), _M_height(_height) { 
+    _M_data.reserve(_width*_height);
+  }
+
+  ////////////////////////////////////////////////////////////
+  size_t width() const noexcept {
+    return _M_width;
+  }
+
+  ////////////////////////////////////////////////////////////
+  size_t height() const noexcept {
+    return _M_height;
+  }
+
+  ////////////////////////////////////////////////////////////
+  T& at(size_t x, size_t y) {
+    int idx = (y*height())+x;
+    return _M_data.at(idx);
+  }
+
+  ////////////////////////////////////////////////////////////
+  T& operator[] (int idx) {
+    return _M_data.at(idx);
+  }
+};
+
+// template<typename T, typename K>
+// class graph;
+
+// template<typename T, typename K>
+// class graph_edge {
+// private:
+//   const K _M_props;
+//   graph<T, K>* _M_v1;
+//   graph<T, K>* _M_v2;
+// public:
+//   ////////////////////////////////////////////////////////////
+//   graph_edge(const K& properties, graph<T, K>* vertice1, graph<T, K>* vertice2)
+// 		: _M_props(properties)
+// 		, _M_v1(vertice1)
+// 		, _M_v2(vertice2) {}
+
+//   ////////////////////////////////////////////////////////////
+//   const graph<T, K>* getVertice1() const { return _M_v1; }
+
+//   ////////////////////////////////////////////////////////////
+// 	const graph<T, K>* getVertice2() const { return _M_v2; }
+  
+//   ////////////////////////////////////////////////////////////
+// 	const K* getProperties() const { return &_M_props; }
+// };
+
+// template<typename T, typename K>
+// class graph {
+// public:
+//   typedef graph<T, K>* pointer_vert; 
+//   typedef graph_edge<T, K>* pointer_edge; 
+// private:
+//   const T _M_props;
+//   mew::stack<graph_edge<T, K>*> _M_edges;
+// public:
+//   ////////////////////////////////////////////////////////////
+//   graph(const T& props): _M_props(props) { }
+
+//   ////////////////////////////////////////////////////////////
+//   const T* props() const { return &_M_props; }
+
+//   ////////////////////////////////////////////////////////////
+// 	const std::vector<graph_edge<T, K>*>* getEdges() const { return &_M_edges; }
+
+//   ////////////////////////////////////////////////////////////
+// 	void addOrderedEdge(const K& properties, graph<T, K>* target) {
+// 		graph_edge<T, K>* edge = new graph_edge<T, K>(properties, target, nullptr);
+// 		_M_edges.push(edge);
+// 	}
+
+//   ////////////////////////////////////////////////////////////
+// 	void addEdge(const K& properties, graph<T, K>* target) {
+// 		graph_edge<T, K>* edge = new graph_edge<T, K>(properties, target, this);
+// 		_M_edges.push(edge);
+// 		target->_M_edges.push(edge);
+// 	}
+
+//   ////////////////////////////////////////////////////////////
+//   bool search(const pointer_vert vertice, const K& prop, mew::stack<const pointer_vert>* visited, int* cost) {
+// 	if (visited.indexOf(vertice) != (size_t)(-1)) {
+// 		return false;
+// 	}
+// 	visited->push(vertice);
+// 	if (*vertice->pops() == prop) {
+// 		return true;
+// 	}
+// 	for (const graph_edge<std::string, int>* edge : *vertice->getEdges()) {
+// 		const graph<std::string, int>* next = edge->getVertice1() == vertice || edge->getVertice1() == nullptr ? edge->getVertice2() : edge->getVertice1();
+// 		if (search(next, name, visited, cost)) {
+// 			*cost += *edge->getProperties();
+// 			return true;
+// 		}
+// 	}
+// 	visited->pop_back();
+// 	return false;
+// }
+// };
+
+}
+
+
+////////////////////////////////////////////////////////////
+template<typename T>
+std::ostream& operator<<(std::ostream& os, const mew::stack<T> &as) {
+  os << "{ ";
+  for (size_t i = 0U; i < as.size(); ++i) {
+    os << as[i] << ", ";
+  }
+  os << "}";
+  return os;
+}
+
+////////////////////////////////////////////////////////////
+template<typename T>
+std::ostream& operator<<(std::ostream& os, const std::initializer_list<T> &is) {
+  os << "{ ";
+  for (size_t i = 0U; i < is.size(); ++i) {
+    os << is.begin()[i] << ", ";
+  }
+  os << "}";
+  return os;
 }
 
 #endif

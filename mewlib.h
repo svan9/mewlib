@@ -8,125 +8,6 @@
 #ifndef MewLib_IMPL
 #define MewLib_IMPL
 
-#include <stdlib.h>
-#include <stdio.h>
-
-#ifndef MEW_NO_RELEASE
-	#define MEW_NO_RELEASE
-#endif
-
-#include <cctype>
-
-#ifndef MEW_NO_RELEASE
-	#ifndef DEBUG
-		#define RELEASE
-	#endif
-#endif
-
-#if defined(__cplusplus) && __cplusplus >= 202002L
-	#define __CXX20
-#endif
-
-// #if defined(__cplusplus) && defined(MEW_USE_THROWS) 
-// #undef MEW_USE_THROWS
-// #endif 
-
-#ifndef NULLVAL
-#define NULLVAL ((void)0)
-#endif
-
-#ifdef __cplusplus
-	#include <exception>
-#endif
-
-#ifdef RELEASE
-	#define __mewassert(strexpr, message, file, line, func) NULLVAL
-	#define __mewassert_nm(strexpr, file, line, func) NULLVAL
-	#define __mewassert_nm_t_bad(func, val, correct) NULLVAL
-	#define __mewassert_nm_t_good(func, val, correct) NULLVAL
-	#define __mewassert_r(strexpr, message, file, line, func) NULLVAL
-	#define __mewassert_nm_r(strexpr, file, line, func) NULLVAL
-#else
-	#define __mewassert(strexpr, message, file, line, func) \
-		printf("\nAssert failed at %s:%i, %s(...)\n  With expression (%s)\n  `%s`", file, line, func, strexpr, message);
-	#define __mewassert_nm(strexpr, file, line, func) \
-		printf("\nAssert failed at %s:%i, %s(...)\n  With expression (%s)\n", file, line, func, strexpr);
-	#define __mewassert_r(strexpr, message, file, line, func) \
-		"\nAssert failed at %s:%i, %s(...)\n  With expression (%s)\n  `%s`", file, line, func, strexpr, message
-	#define __mewassert_nm_r(strexpr, file, line, func) \
-		"\nAssert failed at %s:%i, %s(...)\n  With expression (%s)\n", file, line, func, strexpr
-	#define __mewassert_nm_t_bad(func, val, correct) \
-		putwchar(L'');printf("\033[31mTest failed %s(%i != %i) \033[0m\n", func, val, correct);
-	#define __mewassert_nm_t_good(func, val, correct) \
-		putwchar(L'');printf("\033[92mTest success %s(%i == %i)\033[0m\n", func, val, correct);
-
-#endif
-
-#define MewTest(value, correct) \
-		if (!(value == correct)) { __mewassert_nm_t_bad(__func__, value, correct); }\
-		else { __mewassert_nm_t_good(__func__, value, correct); }
-
-// #define ProcMewStringEnum()
-// #define MewStringEnum(...)
-
-#if !defined(MEW_NOTUSE_THROWS) && __cplusplus
-	#define MewUserAssert(expr, message) \
-		if (!(expr)) { throw std::runtime_error(message); }
-	#define MewAssert(expr) \
-		if (!(expr)) { throw std::runtime_error(#expr);}
-#else
-	#define MewUserAssert(expr, message) \
-		if (!(expr)) {__mewassert(#expr, message, __FILE__, __LINE__, __func__); exit(1); }
-	#define MewAssert(expr) \
-		if (!(expr)) {__mewassert_nm(#expr, __FILE__, __LINE__, __func__); exit(1); }
-#endif
-#define MewNot() MewUserAssert(false, "not")
-#define MewNoImpl() MewUserAssert(false, "not implemented")
-#define MewNotImpl() MewUserAssert(false, "not implemented")
-#define MewWarn(fmt, ...) printf(fmt, __VA_ARGS__)
-#define MewForUserAssert(expr, fmt, ...) if(!(expr)) {printf("-- MEW WARN " fmt " --\n", __VA_ARGS__);}
-#define MewWarnMessage(fmt) printf("-- MEW WARN " fmt " --\n")
-
-#ifndef DISABLE_MEW_PING
-	#define __mew printf("-- mew at %s:%i, %s(...) --\n", __FILE__, __LINE__, __func__);
-	#define _mew() __mew;
-	#define MEWMEW __mew
-	#define ____MEWMEW____ __mew
-#endif
-
-#ifndef DISABLE_MEW_MATH
-	#define MEW_FIND_MASK(_val, _flag) (((_val) & (_flag)) == (_flag))
-	#ifdef __cplusplus
-		#define MEW_ADD_MASK(_val, _flag) (decltype(_val))((int)(_val) | (int)(_flag))
-	#else
-		#define MEW_ADD_MASK(_val, _flag) ((_val) | (_flag))
-	#endif
-
-	bool __mew_bvtr(bool s) { return true; }
-
-	#define MEW_ONE_OR_NONE(_el) (__mew_bvtr(_el))
-	#define MEW_POW2(expr) ((expr)*(expr))
-	#define MEW_IN_RANGE(min, max, value) ((min) <= (value) && (value) <= (max))
-	#define MEW_RM_ALIGN(value, align) ((value) - ((value) % (align)))
-	#define MEW_RM_ALIGN_A(value, align) ((value) + ((value) % (align)))
-	#define MEW_CEIL(val) ((float)((int)(val)))
-	#define MEW_ROUND(val) ((float)((int)((val)>0?(val)+0.5f:(val)-0.5f)))
-
-	#define MEW_RANGE_EQ_PRT(lexpr, rexpr, range) ()
-
-	#define MEW_RANGE_EQ(lexpr, rexpr, range) (  \
-			(lexpr) == (rexpr) ||                    \
-			MEW_IN_RANGE((lexpr)-(range), (lexpr)+(range), rexpr))
-#endif
-#define MEW_SBOOL(expr) ((expr)? "true": "false")
-
-#define MEW_UNUSE(expr) (void)(expr)
-#ifdef __cplusplus
-#define MEW_MALLOC(type) new type()
-#else
-#define MEW_MALLOC(type) (type*)malloc(sizeof(type))
-#endif
-#include <string.h>
 #include "mewtypes.h"
 
 char* scopy(const char* str, size_t len) {
@@ -207,32 +88,29 @@ const char* ValueOrDefault(const char* v, const char* d) {
 #define nonull(__v) ((__v)!=NULL)
 #endif
 
+
 #ifdef __cplusplus
+
+
 template<typename T>
 T* tmalloc() {
 	return (T*)(malloc(sizeof(T)));
 }
-	#define MewPrintError(_error) printf("\nErrored from %s:%i at function `%s(...)`\n\twhat: %s", __FILE__, __LINE__, __func__, (_error).what());
+
+#define MewPrintError(_error) printf("\nErrored from %s:%i at function `%s(...)`\n\twhat: %s", __FILE__, __LINE__, __func__, (_error).what());
+
 #if defined(_WIN32)
 # define _GLIBCXX_FILESYSTEM_IS_WINDOWS 1
 #endif
-	#include <string>
-	#include <filesystem>
-	#include <wchar.h>
-	#include <fstream>
-#ifdef __CXX20
-	#include <concepts>
-#endif
 
-	#include <codecvt>
 
 typedef char* data_t;
-typedef unsigned char byte;
-typedef unsigned int uint;
-typedef unsigned int uint;
+
 typedef long long int lli;
+
 namespace mew {
 	namespace std_fs = std::filesystem;
+	
 	typedef char* data_t;
 	#ifdef __cplusplus
 	typedef unsigned char byte;
@@ -294,16 +172,6 @@ namespace mew {
     	return false;
   	}
 	}
-
-	std::wstring stringToWstring(const std::string& str) {
-		// std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-		std::wstring out;
-		for(char c: str) {
-			out += (wchar_t)c;
-		}
-		return ;
-	}
-
 
 	std::string ReadFile(std_fs::path& path) {
 		constexpr const size_t read_size = 4096;
@@ -407,6 +275,16 @@ namespace mew {
 		return cstr;
 	}
 
+	std_fs::path search_file_in_dir(const std_fs::path& directory, const std_fs::path& file_name) {
+    auto d = std_fs::directory_iterator(directory);
+		for (const auto& entry: d) {
+			if (entry.path().filename() == file_name) {
+				return entry.path();
+			}
+		}
+		return std_fs::path();
+	}
+
 
 	const char* get_file_name(std_fs::path& path) {
 		return scopy(wchar_to_char(path.filename().c_str()));
@@ -487,10 +365,6 @@ namespace mew {
 		file.write((char*)(&content), sizeof(content));
 	}
 
-	void writeString(std::ofstream& file, const char* str) {
-		file.write(str, strlen(str)+1);
-	}
-
 	template<typename T>
 	void writeSeqBytes(std::ofstream& file, T* content, size_t size) {
 		for (int i = 0; i < size; ++i) {
@@ -521,6 +395,14 @@ namespace mew {
       __path = std_fs::absolute(__path.lexically_normal());
     }
     return __path;
+	}
+
+	bool is_exists(std_fs::path path) {
+		return std_fs::exists(path);
+	}
+
+	bool is_exists(const char* path) {
+		return is_exists(GetAbsPath(path));
 	}
 
 	const char* concatPath(const char* first, const char* second) {
@@ -569,6 +451,16 @@ namespace mew {
 		return true;
 	}
 
+	char* strjoin(const char* l, const char* r) {
+		unsigned long int sizel = strlen(l);
+		unsigned long int sizer = strlen(r);
+		char* buffer = (char*)MEW_MALLOC(sizel+sizer + 1);
+		memcpy(buffer, l, sizel);
+		memcpy(buffer+sizel, r, sizer);
+		buffer[sizel+sizer] = '\0';
+		return buffer;
+	}
+
 	bool starts_with(const char* l, const char* m) {
 		return strcmp(l, m, strlen(m));
 	}
@@ -583,7 +475,86 @@ namespace mew {
 		return false;
 	}
 
-#endif	
+	unsigned long long int get_index(const char* str, char c) {
+		const char* ptr = str;
+		unsigned long long int index = 0;
+		while (*ptr != '\0') {
+			if (*ptr == c) {
+				return index;
+			}
+			ptr++;
+			index++;
+		}
+		return -1;
+	}
+
+	char* replace(char* original, char* from, char* to) {
+		// todo
+	}
+
+	char* insert_str(const char* original, const char* to_insert, size_t position) {
+		size_t original_len = strlen(original);
+		size_t to_insert_len = strlen(to_insert);
+
+		if (position > original_len) {
+				position = original_len;
+		}
+
+		size_t new_len = original_len + to_insert_len;
+		char* new_str = (char*)MEW_MALLOC(new_len + 1);
+
+		// Copy the part before the insertion point
+		memcpy(new_str, original, position);
+
+		// Copy the string to insert
+		memcpy(new_str + position, to_insert, to_insert_len);
+
+		// Copy the part after the insertion point
+		memcpy(new_str + position + to_insert_len, original + position, original_len - position);
+
+		new_str[new_len] = '\0'; // Null-terminate the new string
+
+		return new_str;
+	}
+
+	char* format(const char* fmt, ...) {
+		va_list args;
+		va_start(args, fmt);
+		size_t size = vsnprintf(nullptr, 0, fmt, args) + 1; // +1 for null terminator
+		va_end(args);
+
+		char* buffer = (char*)MEW_MALLOC(size);
+		va_start(args, fmt);
+		vsnprintf(buffer, size, fmt, args);
+		va_end(args);
+
+		return buffer;
+	}
+
+	char* eraseChars(const char* str, size_t position, size_t count) {
+		size_t original_len = strlen(str);
+		if (position > original_len) {
+			position = original_len;
+		}
+		if (position + count > original_len) {
+			count = original_len - position;
+		}
+		size_t new_len = original_len - count;
+		char* new_str = (char*)MEW_MALLOC(new_len + 1);
+
+		// Copy the part before the erase point
+		memcpy(new_str, str, position);
+
+		// Copy the part after the erase point
+		memcpy(new_str + position, str + position + count, original_len - position - count);
+
+		new_str[new_len] = '\0'; // Null-terminate the new string
+
+		return new_str;
+	}
+
+
+#endif	// __CXX20
 }
 
 #endif

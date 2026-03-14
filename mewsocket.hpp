@@ -3,7 +3,7 @@
 
 #include "mewlib.h"
 #include "mewtypes.h"
-#include "mewstack.hpp"
+#include "mewstack"
 #include <thread>
 #include <vector>
 #include <mutex>

@@ -8,8 +8,8 @@
 #ifndef MEW_XML_LIB_SO2U
 #define MEW_XML_LIB_SO2U
 #include "mewlib.h"
-#include "mewstack.hpp"
-#include "mewutils.hpp"
+#include "mewstack"
+#include "mewstring"
 #include <unordered_map>
 #include <vector>
 #include <string>
