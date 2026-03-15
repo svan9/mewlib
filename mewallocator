@@ -85,14 +85,15 @@ namespace mew {
 			return _M_size;
 		}
 
-		T* alloc(u64 at_before) {
+		T* alloc(s32 offset) {
+			MewUserAssert(abs(offset) <= _M_size, "Index out of range");
 			upsise();
-			MewUserAssert(at_before <= _M_size, "Index out of range");
-
-			T* insert_pos = (T*)(_M_data) + at_before;
-			memmove(insert_pos + 1, insert_pos, (_M_size - at_before) * sizeof(T));
+			T* insert_begin = _M_data + offset;
+			T* insert_end = insert_begin + 1;
+			T* end = _M_size + _M_data;
+			memmove(insert_end + 1, insert_begin, (end-insert_end)*sizeof(T));
 			++_M_size;
-			return insert_pos;
+			return insert_begin;
 		}
 
 		self concat(self other) {

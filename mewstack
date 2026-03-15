@@ -407,8 +407,8 @@ public:
   // }
 
   ////////////////////////////////////////////////////////////
-  [[deprecated("unsafe")]]
-  u64 push(const T& value, u64 offset) {
+  // [[deprecated("unsafe")]]
+  u64 push(const T& value, s32 offset) {
     T* pointer = _M_allocator.alloc(offset);
     memcpy(pointer, &value, sizeof(value));
     return offset+1;

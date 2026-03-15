@@ -56,7 +56,17 @@ namespace mew {
 		new (ptr) T(*copied);
 	}
 	
-	
+	template<typename T>
+	T max(T a, T b) {
+		if (a > b) return a;
+		return b;
+	}
+
+	template<typename T>
+	T min(T a, T b) {
+		if (a < b) return a;
+		return b;
+	}
 	
 	bool rmemcmp(byte* a, byte* b, size_t size) {
 		for (int i = 0; i < size; ++i) {
@@ -375,7 +385,7 @@ namespace mew {
 	template<typename T, typename K>
 	void gen_adgio(adgio fn, T& a, K& b) {
 		static_assert(is_in_adgio_t<T>::value && is_in_adgio_t<K>::value);
-		fn(&a, getATYPE(a), &b, getATYPE(b));
+		fn((void*)&a, getATYPE(a), (void*)&b, getATYPE(b));
 	}
 
 	int& ainc(int& a) { return ++a; }
