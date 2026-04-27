@@ -241,13 +241,13 @@ public:
   }
 
   ////////////////////////////////////////////////////////////
-  bool has(int idx) const noexcept {
+  bool has_idx(int idx) const noexcept {
     u64 real_idx = get_real_idx(idx);
     return real_idx < count();
   }
 
   ////////////////////////////////////////////////////////////
-  bool has(u64 idx) const noexcept {
+  bool has_idx(u64 idx) const noexcept {
     return idx < count();
   }
 
@@ -273,12 +273,12 @@ public:
 
   ////////////////////////////////////////////////////////////
   T& at(u64 idx) const {
-    MewAssert(has(idx));
+    MewAssert(has_idx(idx));
     return data()[idx];
   }
   ////////////////////////////////////////////////////////////
   T& at(u64 idx, u64 offset) const {
-    MewAssert(has(idx) && idx-(offset/sizeof(T)) >= 0);
+    MewAssert(has_idx(idx) && idx-(offset/sizeof(T)) >= 0);
     T* _d = &(data()[idx]);
     _d = (T*)((byte*)_d - offset);
     return *(T*)(_d);

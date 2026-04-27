@@ -219,92 +219,8 @@ typedef void(*callable)();
 	#define MewFlush() \
   mew::LogManager::get().flush()
 
-namespace mew {
+#include <vector>
 
-// ─── Уровни ─────────────────────────────────────────────────
-enum class LogLevel : uint8_t {
-  INFO     = 0,
-  WARN     = 1,
-  CRITICAL = 2,
-};
-
-// ─── Запись лога ─────────────────────────────────────────────
-struct LogEntry {
-  LogLevel    level;
-  std::string message;
-  const char* file;
-  int         line;
-  const char* func;
-};
-
-// ─── Менеджер ────────────────────────────────────────────────
-class LogManager {
-private:
-  LogManager() = default;
-  std::vector<LogEntry> entries_;
-
-  static const char* label(LogLevel l) {
-    switch (l) {
-      case LogLevel::INFO:     return "INFO";
-      case LogLevel::WARN:     return "WARN";
-      case LogLevel::CRITICAL: return "CRITICAL";
-      default:                 return "?";
-    }
-  }
-
-  static const char* color(LogLevel l) {
-    switch (l) {
-      case LogLevel::INFO:     return "\033[36m";  // cyan
-      case LogLevel::WARN:     return "\033[33m";  // yellow
-      case LogLevel::CRITICAL: return "\033[31m";  // red
-      default:                 return "\033[0m";
-    }
-  }
-public:
-  static LogManager& get() {
-    static LogManager instance;
-    return instance;
-  }
-
-  void push(LogLevel level, const char* file, int line, const char* func, const char* fmt, ...) {
-    char buf[1024];
-    va_list args;
-    va_start(args, fmt);
-    vsnprintf(buf, sizeof(buf), fmt, args);
-    va_end(args);
-
-    entries_.push_back({ level, buf, file, line, func });
-
-    // INFO и WARN — только пишем в буфер
-    // CRITICAL — немедленно печатаем всё накопленное и бросаем
-    if (level == LogLevel::CRITICAL) {
-      flush();
-      throw mew::throws::simple(buf);
-    }
-  }
-
-  // Вывести все накопленные записи (например при завершении)
-  void flush() {
-    if (entries_.empty()) return;
-    printf("\n╔══════════════ MEW LOG DUMP ══════════════╗\n");
-    for (auto& e : entries_) {
-      const char* tag  = label(e.level);
-      const char* col  = color(e.level);
-      printf("║ %s[%-8s]%s %s\n", col, tag, "\033[0m", e.message.c_str());
-      printf("║   at %s:%d  (%s)\n", e.file, e.line, e.func);
-    }
-    printf("╚══════════════════════════════════════════╝\n\n");
-    entries_.clear();
-  }
-
-  ~LogManager() {
-    flush(); // при завершении программы — вывести всё что осталось
-  }
-
-
-};
-
-} // nam
 
 namespace mew {
 	namespace throws {
@@ -403,6 +319,96 @@ namespace mew {
 		};
 	}
 }
+
+
+
+namespace mew {
+
+// ─── Уровни ─────────────────────────────────────────────────
+enum class LogLevel : uint8_t {
+  INFO     = 0,
+  WARN     = 1,
+  CRITICAL = 2,
+};
+
+// ─── Запись лога ─────────────────────────────────────────────
+struct LogEntry {
+  LogLevel    level;
+  std::string message;
+  const char* file;
+  int         line;
+  const char* func;
+};
+
+// ─── Менеджер ────────────────────────────────────────────────
+class LogManager {
+private:
+  LogManager() = default;
+  std::vector<LogEntry> entries_;
+
+  static const char* label(LogLevel l) {
+    switch (l) {
+      case LogLevel::INFO:     return "INFO";
+      case LogLevel::WARN:     return "WARN";
+      case LogLevel::CRITICAL: return "CRITICAL";
+      default:                 return "?";
+    }
+  }
+
+  static const char* color(LogLevel l) {
+    switch (l) {
+      case LogLevel::INFO:     return "\033[36m";  // cyan
+      case LogLevel::WARN:     return "\033[33m";  // yellow
+      case LogLevel::CRITICAL: return "\033[31m";  // red
+      default:                 return "\033[0m";
+    }
+  }
+public:
+  static LogManager& get() {
+    static LogManager instance;
+    return instance;
+  }
+
+  void push(LogLevel level, const char* file, int line, const char* func, const char* fmt, ...) {
+    char buf[1024];
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(buf, sizeof(buf), fmt, args);
+    va_end(args);
+
+    entries_.push_back({ level, buf, file, line, func });
+
+    // INFO и WARN — только пишем в буфер
+    // CRITICAL — немедленно печатаем всё накопленное и бросаем
+    if (level == LogLevel::CRITICAL) {
+      flush();
+      throw mew::throws::simple(buf);
+    }
+  }
+
+  // Вывести все накопленные записи (например при завершении)
+  void flush() {
+    if (entries_.empty()) return;
+    printf("\n╔══════════════ MEW LOG DUMP ══════════════╗\n");
+    for (auto& e : entries_) {
+      const char* tag  = label(e.level);
+      const char* col  = color(e.level);
+      printf("║ %s[%-8s]%s %s\n", col, tag, "\033[0m", e.message.c_str());
+      printf("║   at %s:%d  (%s)\n", e.file, e.line, e.func);
+    }
+    printf("╚══════════════════════════════════════════╝\n\n");
+    entries_.clear();
+  }
+
+  ~LogManager() {
+    flush(); // при завершении программы — вывести всё что осталось
+  }
+
+
+};
+
+}
+
 
 namespace mew {
 	struct Date {
