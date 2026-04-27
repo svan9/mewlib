@@ -239,6 +239,27 @@ struct LogEntry {
 
 // ─── Менеджер ────────────────────────────────────────────────
 class LogManager {
+private:
+  LogManager() = default;
+  std::vector<LogEntry> entries_;
+
+  static const char* label(LogLevel l) {
+    switch (l) {
+      case LogLevel::INFO:     return "INFO";
+      case LogLevel::WARN:     return "WARN";
+      case LogLevel::CRITICAL: return "CRITICAL";
+      default:                 return "?";
+    }
+  }
+
+  static const char* color(LogLevel l) {
+    switch (l) {
+      case LogLevel::INFO:     return "\033[36m";  // cyan
+      case LogLevel::WARN:     return "\033[33m";  // yellow
+      case LogLevel::CRITICAL: return "\033[31m";  // red
+      default:                 return "\033[0m";
+    }
+  }
 public:
   static LogManager& get() {
     static LogManager instance;
@@ -280,27 +301,7 @@ public:
     flush(); // при завершении программы — вывести всё что осталось
   }
 
-private:
-  LogManager() = default;
-  std::vector<LogEntry> entries_;
 
-  static const char* label(LogLevel l) {
-    switch (l) {
-      case LogLevel::INFO:     return "INFO";
-      case LogLevel::WARN:     return "WARN";
-      case LogLevel::CRITICAL: return "CRITICAL";
-      default:                 return "?";
-    }
-  }
-
-  static const char* color(LogLevel l) {
-    switch (l) {
-      case LogLevel::INFO:     return "\033[36m";  // cyan
-      case LogLevel::WARN:     return "\033[33m";  // yellow
-      case LogLevel::CRITICAL: return "\033[31m";  // red
-      default:                 return "\033[0m";
-    }
-  }
 };
 
 } // nam
