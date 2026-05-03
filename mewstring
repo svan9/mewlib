@@ -810,19 +810,19 @@ const char* number_to_strv(NumberVariant number) {
   
   std::visit(overloaded{
     [&out_v](int& i){
-      out_v = new char(sizeof(i));
+      out_v = new char[sizeof(i)];
       memcpy(out_v, &i, sizeof(i));
     },
     [&out_v](float& i){
-      out_v = new char(sizeof(i));
+      out_v = new char[sizeof(i)];
       memcpy(out_v, &i, sizeof(i));
     },
     [&out_v](double& i){
-      out_v = new char(sizeof(i));
+      out_v = new char[sizeof(i)];
       memcpy(out_v, &i, sizeof(i));
     },
     [&out_v](bool& i){
-      out_v = new char(sizeof(i));
+      out_v = new char[sizeof(i)];
       memcpy(out_v, &i, sizeof(i));
     }
   }, number);
