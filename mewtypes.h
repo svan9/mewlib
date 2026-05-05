@@ -189,8 +189,17 @@ typedef void(*callable)();
 #include <string.h>
 #include <typeinfo>
 
+#undef MewLog
+#undef MewWarn
+#undef MewInfo
+#undef MewCritical
+#undef MewWarnIf
+#undef MewInfoIf
+#undef MewCriticalIf
+#undef MewFlush
+
 #define MewLog(level, fmt, ...) \
-  mew::LogManager::get().push(level, __FILE__, __LINE__, __func__, fmt, ##__VA_ARGS__)
+  mew::LogManager::get().push(level, __FILE__, __LINE__, __func__, fmt, ##__VA_ARGS__);
 
 // Просто записать
 #define MewInfo(fmt, ...) \
@@ -235,7 +244,7 @@ namespace mew {
 		private:
 			const char* message = 0;
 		public:
-			simple(const char* message) noexcept
+			simple(const char* message = "none") noexcept
 				: message(message)  {}
 			~simple() noexcept {}
 
@@ -369,7 +378,7 @@ public:
     return instance;
   }
 
-  void push(LogLevel level, const char* file, int line, const char* func, const char* fmt, ...) {
+  void push(LogLevel level, const char* file = "0", int line = 0, const char* func = "0", const char* fmt = "0", ...) {
     char buf[1024];
     va_list args;
     va_start(args, fmt);
@@ -389,14 +398,16 @@ public:
   // Вывести все накопленные записи (например при завершении)
   void flush() {
     if (entries_.empty()) return;
-    printf("\n╔══════════════ MEW LOG DUMP ══════════════╗\n");
+    // printf("\n╔══════════════ MEW LOG DUMP ══════════════╗\n");
     for (auto& e : entries_) {
       const char* tag  = label(e.level);
       const char* col  = color(e.level);
-      printf("║ %s[%-8s]%s %s\n", col, tag, "\033[0m", e.message.c_str());
-      printf("║   at %s:%d  (%s)\n", e.file, e.line, e.func);
+			// ║ 
+			// ║ 
+      printf("%s[%s]%s %s\n", col, tag, "\033[0m", e.message.c_str());
+      printf("at %s:%d  (%s)\n", e.file, e.line, e.func);
     }
-    printf("╚══════════════════════════════════════════╝\n\n");
+    // printf("╚══════════════════════════════════════════╝\n\n");
     entries_.clear();
   }
 
