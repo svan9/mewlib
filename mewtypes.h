@@ -327,6 +327,17 @@ namespace mew {
 			}
 		};
 	}
+
+	template<typename T>
+	u8* pack(T& val) {
+		T* ptr = new T(val);
+		return (u8*)ptr;
+	}
+	template<typename T>
+	u8* pack(T&& val) {
+		T* ptr = new T(val);
+		return (u8*)ptr;
+	}
 }
 
 

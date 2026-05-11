@@ -4,16 +4,17 @@
  * - Git: https://github.com/svan9/mewlib
  **************************************************/
 
-
 #ifndef MEW_STRING_LIB_SO2U
 #define MEW_STRING_LIB_SO2U
-#include "mewlib.h"
-#include "mewtypes.h"
-#include "mewstack"
-#include <variant>
-#include <filesystem>
 #include <stdio.h>
+
+#include <filesystem>
 #include <memory>
+#include <variant>
+
+#include "mewlib.h"
+#include "mewstack"
+#include "mewtypes.h"
 
 #ifndef __cplusplus
 #error cpp only
@@ -21,494 +22,507 @@
 #include <cstdarg>
 
 namespace mew {
-  
-  template<typename T>
-  void faspp(T& lhr, T val) {
-    delete &lhr;
-    lhr = val;
-  }
 
-  template<typename T>
-  void fas(T& lhr, T val) {
-    delete &lhr;
-    lhr = val;
-  }
+template <typename T>
+void faspp(T& lhr, T val) {
+  delete &lhr;
+  lhr = val;
+}
 
-  // free and swap
-  template<typename T>
-  void fas(T*& lhr, T* val) {
-    delete lhr;
-    lhr = val;
-  }
+template <typename T>
+void fas(T& lhr, T val) {
+  delete &lhr;
+  lhr = val;
+}
 
-	const char* getUserHome() {
-	#ifdef _WIN32
-		return getenv("USERPROFILE");
-	#else
-		return getenv("HOME");
-	#endif
-	}
-	const char* getUserHome(const char* next_path) {
-		const char* home = getUserHome();
-		const char* a = mew::concatPath(home, next_path);
-		return a;
-	}
+// free and swap
+template <typename T>
+void fas(T*& lhr, T* val) {
+  delete lhr;
+  lhr = val;
+}
+
+const char* getUserHome() {
+#ifdef _WIN32
+  return getenv("USERPROFILE");
+#else
+  return getenv("HOME");
+#endif
+}
+const char* getUserHome(const char* next_path) {
+  const char* home = getUserHome();
+  const char* a = mew::concatPath(home, next_path);
+  return a;
+}
 
 namespace string {
-	char* Format(const char* format, ...) {
-		va_list args;
-		va_start(args, format);
-		size_t size = vsnprintf(nullptr, 0, format, args) + 1; // Extra space for '\0'
-		va_end(args);
+char* Format(const char* format, ...) {
+  va_list args;
+  va_start(args, format);
+  size_t size = vsnprintf(nullptr, 0, format, args) + 1;  // Extra space for '\0'
+  va_end(args);
 
-		std::unique_ptr<char[]> buf(new char[size]);
-		va_start(args, format);
-		vsnprintf(buf.get(), size, format, args);
-		va_end(args);
-		return scopy(buf.get());
-	}
-	
-	
-  char *ansi(wchar_t *unicode) {
-    size_t size = wcslen(unicode);
-    char* buffer = new char[size+1]; 
-    for (int i = 0; i < size; i++) {
-      buffer[i] = wctob(unicode[i]);
+  std::unique_ptr<char[]> buf(new char[size]);
+  va_start(args, format);
+  vsnprintf(buf.get(), size, format, args);
+  va_end(args);
+  return scopy(buf.get());
+}
+
+char* ansi(wchar_t* unicode) {
+  size_t size = wcslen(unicode);
+  char* buffer = new char[size + 1];
+  for (int i = 0; i < size; i++) {
+    buffer[i] = wctob(unicode[i]);
+  }
+  buffer[size] = '\0';
+  return buffer;
+}
+
+class StringBuilder {
+ private:
+  std::unique_ptr<char[]> buffer;
+  size_t length;
+  size_t capacity;
+
+  void EnsureCapacity(size_t newCapacity) {
+    if (newCapacity > capacity) {
+      capacity = newCapacity;
+      std::unique_ptr<char[]> newBuffer(new char[capacity]);
+      if (buffer) {
+        memcpy(newBuffer.get(), buffer.get(), length);
+      }
+      buffer.swap(newBuffer);
     }
-    buffer[size] = '\0';
-    return buffer;
   }
 
-	class StringBuilder {
-	private:
-		std::unique_ptr<char[]> buffer;
-		size_t length;
-		size_t capacity;
-			
-		void EnsureCapacity(size_t newCapacity) {
-			if (newCapacity > capacity) {
-				capacity = newCapacity;
-				std::unique_ptr<char[]> newBuffer(new char[capacity]);
-				if (buffer) {
-					memcpy(newBuffer.get(), buffer.get(), length);
-				}
-				buffer.swap(newBuffer);
-			}
-		}
-			
-	public:
-		StringBuilder() : length(0), capacity(16) {
-			char* ptr = new (std::nothrow) char[capacity];
-			MewAssert(ptr);
-			buffer.reset(ptr);
-			buffer[0] = '\0';
-		}
-			
-		StringBuilder& Insert(size_t pos, const char* str) {
-			size_t strLen = strlen(str);
-			if (pos > length) {
-				pos = length;
-			}
-			EnsureCapacity(length + strLen + 1);
-			memmove(buffer.get() + pos + strLen, buffer.get() + pos, length - pos + 1);
-			memcpy(buffer.get() + pos, str, strLen);
-			length += strLen;
-			return *this;
-		}
-			
-		StringBuilder& Append(const char* str) {
-			size_t strLen = strlen(str);
-			EnsureCapacity(length + strLen + 1);
-			memcpy(buffer.get() + length, str, strLen);
-			length += strLen;
-			buffer[length] = '\0';
-			return *this;
-		}
-			
-		StringBuilder& Append(char c, bool replace = false) {
-			if (length > 0 && replace && buffer[length - 1] == c) {
-				return *this;
-			}
-			EnsureCapacity(length + 2);
-			buffer[length++] = c;
-			buffer[length] = '\0';
-			return *this;
-		}
-			
-		StringBuilder& AppendFormat(const char* format, ...) {
-			va_list args;
-			va_start(args, format);
-			size_t size = vsnprintf(nullptr, 0, format, args) + 1;
-			va_end(args);
-			
-			EnsureCapacity(length + size);
-			va_start(args, format);
-			vsnprintf(buffer.get() + length, size, format, args);
-			va_end(args);
-			
-			length += size - 1;
-			return *this;
-		}
-			
-		char* c_str() {
-			char* result = new char[length + 1];
-			memcpy(result, buffer.get(), length + 1);
-			return result;
-		}
-			
-		void Clear() {
-			length = 0;
-			if (buffer) {
-				buffer[0] = '\0';
-			}
-		}
+ public:
+  StringBuilder() : length(0), capacity(16) {
+    char* ptr = new (std::nothrow) char[capacity];
+    MewAssert(ptr);
+    buffer.reset(ptr);
+    buffer[0] = '\0';
+  }
 
-		template<typename T>
-		StringBuilder& AppendStruct(T& str) {
-			char buffer[sizeof(T)+1];
-			memcpy(buffer, &str, sizeof(str));
-			buffer[sizeof(T)] = 0;
-			return Append(buffer);
-		}
-			
-		StringBuilder& operator+=(const char* c) {
-			return Append(c);
-		}
-			
-		StringBuilder& operator+=(char c) {
-			return Append(c);
-		}
+  StringBuilder& Insert(size_t pos, const char* str) {
+    size_t strLen = strlen(str);
+    if (pos > length) {
+      pos = length;
+    }
+    EnsureCapacity(length + strLen + 1);
+    memmove(buffer.get() + pos + strLen, buffer.get() + pos, length - pos + 1);
+    memcpy(buffer.get() + pos, str, strLen);
+    length += strLen;
+    return *this;
+  }
 
-		StringBuilder& operator+=(u64 c) {
-			char buffer[sizeof(c)+1];
-			memcpy(buffer, &c, sizeof(c));
-			buffer[sizeof(c)] = '\0';
-			return Append(buffer);
-		}
-			
-		friend StringBuilder& operator+(StringBuilder& l, char r) {
-			return l.Append(r);
-		}
-			
-		size_t size() const {
-			return length;
-		}
-	};
-	class WStringBuilder {
-	private:
-		std::unique_ptr<wchar_t[]> buffer;
-		size_t length;
-		size_t capacity;
-			
-		void EnsureCapacity(size_t newCapacity) {
-			if (newCapacity > capacity) {
-				capacity = newCapacity;
-				std::unique_ptr<wchar_t[]> newBuffer(new wchar_t[capacity]);
-				if (buffer) {
-					memcpy(newBuffer.get(), buffer.get(), length);
-				}
-				buffer.swap(newBuffer);
-			}
-		}
-			
-	public:
-		WStringBuilder() : length(0), capacity(16) {
-			wchar_t* ptr = new (std::nothrow) wchar_t[capacity];
-			MewAssert(ptr);
-			buffer.reset(ptr);
-			buffer[0] = '\0';
-		}
-			
-		WStringBuilder& Insert(size_t pos, const wchar_t* str) {
-			size_t strLen = wcslen(str);
-			if (pos > length) {
-				pos = length;
-			}
-			EnsureCapacity(length + strLen + 1);
-			memmove(buffer.get() + pos + strLen, buffer.get() + pos, length - pos + 1);
-			memcpy(buffer.get() + pos, str, strLen);
-			length += strLen;
-			return *this;
-		}
-			
-		WStringBuilder& Append(const wchar_t* str) {
-			size_t strLen = wcslen(str);
-			EnsureCapacity(length + strLen + 1);
-			memcpy(buffer.get() + length, str, strLen);
-			length += strLen;
-			buffer[length] = '\0';
-			return *this;
-		}
-			
-		WStringBuilder& Append(wchar_t c, bool replace = false) {
-			if (length > 0 && replace && buffer[length - 1] == c) {
-				return *this;
-			}
-			EnsureCapacity(length + 2);
-			buffer[length++] = c;
-			buffer[length] = '\0';
-			return *this;
-		}
+  StringBuilder& Append(const char* str) {
+    size_t strLen = strlen(str);
+    EnsureCapacity(length + strLen + 1);
+    memcpy(buffer.get() + length, str, strLen);
+    length += strLen;
+    buffer[length] = '\0';
+    return *this;
+  }
 
-			
-		wchar_t* c_str() {
-			wchar_t* result = new wchar_t[length + 1];
-			memcpy(result, buffer.get(), length + 1);
-			return result;
-		}
-			
-		void Clear() {
-			length = 0;
-			if (buffer) {
-				buffer[0] = '\0';
-			}
-		}
-			
-		WStringBuilder& operator+=(const wchar_t* c) {
-			return Append(c);
-		}
-			
-		WStringBuilder& operator+=(wchar_t c) {
-			return Append(c);
-		}
-			
-		friend WStringBuilder& operator+(WStringBuilder& l, wchar_t r) {
-			return l.Append(r);
-		}
-			
-		size_t size() const {
-			return length;
-		}
-	};
+  StringBuilder& Append(char c, bool replace = false) {
+    if (length > 0 && replace && buffer[length - 1] == c) {
+      return *this;
+    }
+    EnsureCapacity(length + 2);
+    buffer[length++] = c;
+    buffer[length] = '\0';
+    return *this;
+  }
 
-	class StringIterator {
-	public:
-		const char *cbegin, *begin, *end;
-		typedef StringIterator iterator;
-		typedef const StringIterator const_iterator;
+  StringBuilder& AppendFormat(const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    size_t size = vsnprintf(nullptr, 0, format, args) + 1;
+    va_end(args);
 
-		////////////////////////////////////////////////////////////
-		StringIterator() {}
+    EnsureCapacity(length + size);
+    va_start(args, format);
+    vsnprintf(buffer.get() + length, size, format, args);
+    va_end(args);
 
-		////////////////////////////////////////////////////////////
-		StringIterator(const char* source): cbegin(source), begin(source), end(source+strlen(source)) {}
+    length += size - 1;
+    return *this;
+  }
 
-		////////////////////////////////////////////////////////////
-		iterator Begin() {
-			return iterator(*this);
-		}
+  char* c_str() {
+    char* result = new char[length + 1];
+    memcpy(result, buffer.get(), length + 1);
+    return result;
+  }
 
-		////////////////////////////////////////////////////////////
-		iterator End() {
-			return iterator(*this)+(end-begin);
-		}
-		
-		////////////////////////////////////////////////////////////
-		bool IncCheck(int v = 1) {
-			return begin+(v-1) != end;
-		}
-				
-		////////////////////////////////////////////////////////////
-		bool DecCheck(int v = 1) {
-			return begin-(v+1) != cbegin;
-		}
+  void Clear() {
+    length = 0;
+    if (buffer) {
+      buffer[0] = '\0';
+    }
+  }
 
-		////////////////////////////////////////////////////////////
-		iterator& operator++() {
-			if (IncCheck()) { ++begin; }
-			return *this;
-		}
-		
-		////////////////////////////////////////////////////////////
-		iterator operator++(int) {
-			iterator tmp(*this);
-      ++(*this);
-			return tmp;
-		}
-		
-		////////////////////////////////////////////////////////////
-		iterator& operator--() {
-			if (DecCheck()) { begin--; }
-			return *this;
-		}
+  template <typename T>
+  StringBuilder& AppendStruct(T& str) {
+    char buffer[sizeof(T) + 1];
+    memcpy(buffer, &str, sizeof(str));
+    buffer[sizeof(T)] = 0;
+    return Append(buffer);
+  }
 
-		////////////////////////////////////////////////////////////
-		iterator operator--(int) {
-			iterator tmp(*this);
-			operator--();
-			return tmp;
-		}  
+  StringBuilder& operator+=(const char* c) {
+    return Append(c);
+  }
 
-		////////////////////////////////////////////////////////////
-		iterator& operator+=(const int v) noexcept {
-			if (IncCheck(v)) { begin += v; }
-			return *this;
-		}
+  StringBuilder& operator+=(char c) {
+    return Append(c);
+  }
 
-		///////////////////////////////////////////////////////////.
-		iterator operator+(const int _Off) const noexcept {
-			iterator _Tmp = *this;
-			_Tmp += _Off;
-			return _Tmp;
-		}
+  StringBuilder& operator+=(u64 c) {
+    char buffer[sizeof(c) + 1];
+    memcpy(buffer, &c, sizeof(c));
+    buffer[sizeof(c)] = '\0';
+    return Append(buffer);
+  }
 
-		////////////////////////////////////////////////////////////
-		friend iterator operator+(const int _Off, iterator _Next) noexcept {
-			_Next += _Off;
-			return _Next;
-		}
+  friend StringBuilder& operator+(StringBuilder& l, char r) {
+    return l.Append(r);
+  }
 
-		////////////////////////////////////////////////////////////
-		iterator& operator-=(const int v) noexcept {
-			if (DecCheck(v)) { begin -= v; }
-			return *this;
-		}
+  size_t size() const {
+    return length;
+  }
+};
+class WStringBuilder {
+ private:
+  std::unique_ptr<wchar_t[]> buffer;
+  size_t length;
+  size_t capacity;
 
-		////////////////////////////////////////////////////////////
-		iterator operator-(const int _Off) const noexcept {
-			iterator _Tmp = *this;
-			_Tmp -= _Off;
-			return _Tmp;
-		}
+  void EnsureCapacity(size_t newCapacity) {
+    if (newCapacity > capacity) {
+      capacity = newCapacity;
+      std::unique_ptr<wchar_t[]> newBuffer(new wchar_t[capacity]);
+      if (buffer) {
+        memcpy(newBuffer.get(), buffer.get(), length);
+      }
+      buffer.swap(newBuffer);
+    }
+  }
 
-		////////////////////////////////////////////////////////////
-		friend iterator operator-(const int _Off, iterator _Next) noexcept {
-			_Next -= _Off;
-			return _Next;
-		}
+ public:
+  WStringBuilder() : length(0), capacity(16) {
+    wchar_t* ptr = new (std::nothrow) wchar_t[capacity];
+    MewAssert(ptr);
+    buffer.reset(ptr);
+    buffer[0] = '\0';
+  }
 
-		////////////////////////////////////////////////////////////
-		friend bool operator==(const iterator& l, const iterator& r) noexcept {
-			return l.end == r.end && l.begin == r.begin;
-		}
+  WStringBuilder& Insert(size_t pos, const wchar_t* str) {
+    size_t strLen = wcslen(str);
+    if (pos > length) {
+      pos = length;
+    }
+    EnsureCapacity(length + strLen + 1);
+    memmove(buffer.get() + pos + strLen, buffer.get() + pos, length - pos + 1);
+    memcpy(buffer.get() + pos, str, strLen);
+    length += strLen;
+    return *this;
+  }
 
-		////////////////////////////////////////////////////////////
-		friend bool operator!=(const iterator& l, const iterator& r) noexcept {
-			return l.end != r.end || l.begin != r.begin;
-		}
+  WStringBuilder& Append(const wchar_t* str) {
+    size_t strLen = wcslen(str);
+    EnsureCapacity(length + strLen + 1);
+    memcpy(buffer.get() + length, str, strLen);
+    length += strLen;
+    buffer[length] = '\0';
+    return *this;
+  }
 
-		////////////////////////////////////////////////////////////
-		bool IsEnd() {
-			return begin == end;
-		}
+  WStringBuilder& Append(wchar_t c, bool replace = false) {
+    if (length > 0 && replace && buffer[length - 1] == c) {
+      return *this;
+    }
+    EnsureCapacity(length + 2);
+    buffer[length++] = c;
+    buffer[length] = '\0';
+    return *this;
+  }
 
-		////////////////////////////////////////////////////////////
-		char operator*() {
-			return *begin;
-		}
+  wchar_t* c_str() {
+    wchar_t* result = new wchar_t[length + 1];
+    memcpy(result, buffer.get(), length + 1);
+    return result;
+  }
 
-		////////////////////////////////////////////////////////////
-		static char BeginChar(const char* source) {
-			return *(source);
-		}
+  void Clear() {
+    length = 0;
+    if (buffer) {
+      buffer[0] = '\0';
+    }
+  }
 
-		////////////////////////////////////////////////////////////
-		static char EndChar(const char* source) {
-			return *(strlen(source)+source-1);
-		}
+  WStringBuilder& operator+=(const wchar_t* c) {
+    return Append(c);
+  }
 
-		////////////////////////////////////////////////////////////
-		static bool HasChar(const char* source, char c) {
-			for (int i = 0; i < strlen(source); i++) {
-				if (source[i] == c) {
-					return true;
-				}
-			}
-			return false;
-		}
+  WStringBuilder& operator+=(wchar_t c) {
+    return Append(c);
+  }
 
-		////////////////////////////////////////////////////////////
-		static bool HasCharNoCase(const char* source, char c) {
-			for (int i = 0; i < strlen(source); i++) {
-				if (tolower(source[i]) == tolower(c)) {
-					return true;
-				}
-			}
-			return false;
-		}
+  friend WStringBuilder& operator+(WStringBuilder& l, wchar_t r) {
+    return l.Append(r);
+  }
 
-		////////////////////////////////////////////////////////////
-		static bool HasChars(const char* source, char* c) {
-			bool value = false;
-			for (int i = 0; i < strlen(c); i++) {
-				value &= HasChar(source, c[i]);
-			}
-			return value;
-		}
+  size_t size() const {
+    return length;
+  }
+};
 
-		////////////////////////////////////////////////////////////
-		static bool HasCharsNoCase(const char* source, char* c) {
-			bool value = false;
-			for (int i = 0; i < strlen(c); i++) {
-				value &= HasCharNoCase(source, c[i]);
-			}
-			return value;
-		}
-	};
+class StringIterator {
+ public:
+  const char *cbegin, *begin, *end;
+  typedef StringIterator iterator;
+  typedef const StringIterator const_iterator;
 
-	////////////////////////////////////////////////////////////
-	size_t CountRightBefore(const char* source, char c) {
-		size_t count = 0;
-		const char* begin = source;
-		const char* end = begin+strlen(source);
-		while (begin != end) {
-			if (*(begin++) == c) { break; }
-			count++;
-		}
-		return count;
-	}
+  ////////////////////////////////////////////////////////////
+  StringIterator() {}
 
-	////////////////////////////////////////////////////////////
-	bool CharInString(const char* str, char c) {
-		const char* begin = str;
-		const char* end = begin+strlen(str);
-		while (begin != end) {
-			if (*(begin++) == c) {
-				return true;
-			}
-		}
-		return false;
-	}
-	
-	////////////////////////////////////////////////////////////
-	size_t CountRightBefore(const char* source, const char* c) {
-		size_t count = 0;
-		const char* begin = source;
-		const char* end = begin+strlen(source);
-		while (begin != end) {
-			if (CharInString(c, *(begin++))) { break; }
-			count++;
-		}
-		return count;
-	}	
+  ////////////////////////////////////////////////////////////
+  StringIterator(const char* source) : cbegin(source), begin(source), end(source + strlen(source)) {}
 
-	////////////////////////////////////////////////////////////
-	size_t CountRightFor(const char* source, const char* c) {
-		size_t count = 0;
-		const char* begin = source;
-		const char* end = begin+strlen(source);
-		while (begin != end) {
-			if (!CharInString(c, *(begin++))) { break; }
-			count++;
-		}
-		return count;
-	}
+  ////////////////////////////////////////////////////////////
+  iterator Begin() {
+    return iterator(*this);
+  }
 
+  ////////////////////////////////////////////////////////////
+  iterator End() {
+    return iterator(*this) + (end - begin);
+  }
 
-	////////////////////////////////////////////////////////////
-	bool EndWith(const char* source, char c) {
-		size_t size = strlen(source);
-		return source[size-1] == c;
-	}
+  ////////////////////////////////////////////////////////////
+  bool IncCheck(int v = 1) {
+    return begin + (v - 1) != end;
+  }
 
-	////////////////////////////////////////////////////////////
-	bool SameStr(const char* str1, const char* str2) {
-		size_t s1 = strlen(str1);
-		size_t s2 = strlen(str2);
-		if (s1 != s2) { return false; }
-		return 0 == memcmp(str1, str2, s1);
-	}
-	
+  ////////////////////////////////////////////////////////////
+  bool DecCheck(int v = 1) {
+    return begin - (v + 1) != cbegin;
+  }
+
+  ////////////////////////////////////////////////////////////
+  iterator& operator++() {
+    if (IncCheck()) {
+      ++begin;
+    }
+    return *this;
+  }
+
+  ////////////////////////////////////////////////////////////
+  iterator operator++(int) {
+    iterator tmp(*this);
+    ++(*this);
+    return tmp;
+  }
+
+  ////////////////////////////////////////////////////////////
+  iterator& operator--() {
+    if (DecCheck()) {
+      begin--;
+    }
+    return *this;
+  }
+
+  ////////////////////////////////////////////////////////////
+  iterator operator--(int) {
+    iterator tmp(*this);
+    operator--();
+    return tmp;
+  }
+
+  ////////////////////////////////////////////////////////////
+  iterator& operator+=(const int v) noexcept {
+    if (IncCheck(v)) {
+      begin += v;
+    }
+    return *this;
+  }
+
+  ///////////////////////////////////////////////////////////.
+  iterator operator+(const int _Off) const noexcept {
+    iterator _Tmp = *this;
+    _Tmp += _Off;
+    return _Tmp;
+  }
+
+  ////////////////////////////////////////////////////////////
+  friend iterator operator+(const int _Off, iterator _Next) noexcept {
+    _Next += _Off;
+    return _Next;
+  }
+
+  ////////////////////////////////////////////////////////////
+  iterator& operator-=(const int v) noexcept {
+    if (DecCheck(v)) {
+      begin -= v;
+    }
+    return *this;
+  }
+
+  ////////////////////////////////////////////////////////////
+  iterator operator-(const int _Off) const noexcept {
+    iterator _Tmp = *this;
+    _Tmp -= _Off;
+    return _Tmp;
+  }
+
+  ////////////////////////////////////////////////////////////
+  friend iterator operator-(const int _Off, iterator _Next) noexcept {
+    _Next -= _Off;
+    return _Next;
+  }
+
+  ////////////////////////////////////////////////////////////
+  friend bool operator==(const iterator& l, const iterator& r) noexcept {
+    return l.end == r.end && l.begin == r.begin;
+  }
+
+  ////////////////////////////////////////////////////////////
+  friend bool operator!=(const iterator& l, const iterator& r) noexcept {
+    return l.end != r.end || l.begin != r.begin;
+  }
+
+  ////////////////////////////////////////////////////////////
+  bool IsEnd() {
+    return begin == end;
+  }
+
+  ////////////////////////////////////////////////////////////
+  char operator*() {
+    return *begin;
+  }
+
+  ////////////////////////////////////////////////////////////
+  static char BeginChar(const char* source) {
+    return *(source);
+  }
+
+  ////////////////////////////////////////////////////////////
+  static char EndChar(const char* source) {
+    return *(strlen(source) + source - 1);
+  }
+
+  ////////////////////////////////////////////////////////////
+  static bool HasChar(const char* source, char c) {
+    for (int i = 0; i < strlen(source); i++) {
+      if (source[i] == c) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  ////////////////////////////////////////////////////////////
+  static bool HasCharNoCase(const char* source, char c) {
+    for (int i = 0; i < strlen(source); i++) {
+      if (tolower(source[i]) == tolower(c)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  ////////////////////////////////////////////////////////////
+  static bool HasChars(const char* source, char* c) {
+    bool value = false;
+    for (int i = 0; i < strlen(c); i++) {
+      value &= HasChar(source, c[i]);
+    }
+    return value;
+  }
+
+  ////////////////////////////////////////////////////////////
+  static bool HasCharsNoCase(const char* source, char* c) {
+    bool value = false;
+    for (int i = 0; i < strlen(c); i++) {
+      value &= HasCharNoCase(source, c[i]);
+    }
+    return value;
+  }
+};
+
+////////////////////////////////////////////////////////////
+size_t CountRightBefore(const char* source, char c) {
+  size_t count = 0;
+  const char* begin = source;
+  const char* end = begin + strlen(source);
+  while (begin != end) {
+    if (*(begin++) == c) {
+      break;
+    }
+    count++;
+  }
+  return count;
+}
+
+////////////////////////////////////////////////////////////
+bool CharInString(const char* str, char c) {
+  const char* begin = str;
+  const char* end = begin + strlen(str);
+  while (begin != end) {
+    if (*(begin++) == c) {
+      return true;
+    }
+  }
+  return false;
+}
+
+////////////////////////////////////////////////////////////
+size_t CountRightBefore(const char* source, const char* c) {
+  size_t count = 0;
+  const char* begin = source;
+  const char* end = begin + strlen(source);
+  while (begin != end) {
+    if (CharInString(c, *(begin++))) {
+      break;
+    }
+    count++;
+  }
+  return count;
+}
+
+////////////////////////////////////////////////////////////
+size_t CountRightFor(const char* source, const char* c) {
+  size_t count = 0;
+  const char* begin = source;
+  const char* end = begin + strlen(source);
+  while (begin != end) {
+    if (!CharInString(c, *(begin++))) {
+      break;
+    }
+    count++;
+  }
+  return count;
+}
+
+////////////////////////////////////////////////////////////
+bool EndWith(const char* source, char c) {
+  size_t size = strlen(source);
+  return source[size - 1] == c;
+}
+
+////////////////////////////////////////////////////////////
+bool SameStr(const char* str1, const char* str2) {
+  size_t s1 = strlen(str1);
+  size_t s2 = strlen(str2);
+  if (s1 != s2) {
+    return false;
+  }
+  return 0 == memcmp(str1, str2, s1);
+}
+
 mew::stack<const char*>* splitLines(const char* str, bool trim_lines = true) {
   using namespace mew::string;
   auto lines = new mew::stack<const char*>();
@@ -517,8 +531,11 @@ mew::stack<const char*>* splitLines(const char* str, bool trim_lines = true) {
   size_t line_size = 0;
   for (size_t i = 0; i < size; ++i) {
     if (CharInString("\n", str[i])) {
-      while(CharInString("\n", str[i+1])) { ++i; ++line_size; }
-      const char* cs = scopy(line_begin, line_size+1);
+      while (CharInString("\n", str[i + 1])) {
+        ++i;
+        ++line_size;
+      }
+      const char* cs = scopy(line_begin, line_size + 1);
       if (trim_lines) {
         fas(cs, (const char*)strtrim(cs));
       }
@@ -540,20 +557,22 @@ char* str_parse(const char* str, size_t size) {
   using namespace mew::string;
   StringBuilder sb;
   for (size_t i = 0; i < size; ++i) {
-    if (i+1 < size && str[i] == '\\' && str[i+1] == '\\') {
-      sb += '\\'; ++i;
-    } else 
-    if (i+1 < size && str[i] == '\\' && str[i+1] == 'n') {
-      sb += '\n'; ++i;
-    } else 
-    if (i+1 < size && str[i] == '\\' && str[i+1] == 't') {
-      sb += '\t'; ++i;
-    } else 
-    if (i+1 < size && str[i] == '\\' && str[i+1] == '0') {
-      sb += '\0'; ++i;
-    } else sb.Append(str[i]);
+    if (i + 1 < size && str[i] == '\\' && str[i + 1] == '\\') {
+      sb += '\\';
+      ++i;
+    } else if (i + 1 < size && str[i] == '\\' && str[i + 1] == 'n') {
+      sb += '\n';
+      ++i;
+    } else if (i + 1 < size && str[i] == '\\' && str[i + 1] == 't') {
+      sb += '\t';
+      ++i;
+    } else if (i + 1 < size && str[i] == '\\' && str[i + 1] == '0') {
+      sb += '\0';
+      ++i;
+    } else
+      sb.Append(str[i]);
   }
-  char* ostr = scopy((char*)sb.c_str(), sb.size()+1);
+  char* ostr = scopy((char*)sb.c_str(), sb.size() + 1);
   return ostr;
 }
 
@@ -561,32 +580,34 @@ char* str_separate(const char* str, size_t size) {
   using namespace mew::string;
   StringBuilder sb;
   char* result;
-  while (std::isspace(*str)) { ++str; --size; }
+  while (std::isspace(*str)) {
+    ++str;
+    --size;
+  }
   for (size_t i = 0; i < size; ++i) {
     // skip strings
     if (str[i] == '\"') {
       sb += str[i];
-      ++i; // skip current
+      ++i;  // skip current
       for (; i < size && (str[i] != '\"' || str[i - 1] == '\\'); ++i) {
         sb += str[i];
       }
       sb += str[i];
-    } else 
-    if (std::ispunct(str[i]) && str[i] != '_') {
+    } else if (std::ispunct(str[i]) && str[i] != '_') {
       sb.Append('\0', true);
       sb += str[i];
       sb.Append('\0', true);
     } else
-    // mark spaces and symbols
-    if (std::isspace(str[i])) {
-      sb.Append('\0', true);
-    } else {
-      sb += str[i];
-    }
+      // mark spaces and symbols
+      if (std::isspace(str[i])) {
+        sb.Append('\0', true);
+      } else {
+        sb += str[i];
+      }
   }
   sb += '\0';
   sb += '\1';
-  char* ostr = scopy((char*)sb.c_str(), sb.size()+1);
+  char* ostr = scopy((char*)sb.c_str(), sb.size() + 1);
   return ostr;
 }
 
@@ -607,7 +628,7 @@ char* str_split(const char* str, size_t size, char s, bool trim = true) {
   }
   sb += '\0';
   sb += '\1';
-  char* ostr = scopy((char*)sb.c_str(), sb.size()+1);
+  char* ostr = scopy((char*)sb.c_str(), sb.size() + 1);
   return ostr;
 }
 char* str_split(const char* str, char s, bool trim = true) {
@@ -627,7 +648,7 @@ char* str_split(const char* str, size_t size, const char* s, bool trim = true) {
   }
   sb += '\0';
   sb += '\1';
-  char* ostr = scopy((char*)sb.c_str(), sb.size()+1);
+  char* ostr = scopy((char*)sb.c_str(), sb.size() + 1);
   return ostr;
 }
 char* str_split(const char* str, const char* s, bool trim = true) {
@@ -646,7 +667,7 @@ wchar_t* str_split(const wchar_t* str, size_t size, wchar_t s, bool trim = true)
   }
   sb += L'\0';
   sb += L'\1';
-  wchar_t* ostr = scopy((wchar_t*)sb.c_str(), sb.size()+1);
+  wchar_t* ostr = scopy((wchar_t*)sb.c_str(), sb.size() + 1);
   return ostr;
 }
 wchar_t* str_split(const wchar_t* str, wchar_t s, bool trim = true) {
@@ -666,58 +687,59 @@ wchar_t* str_split(const wchar_t* str, size_t size, const wchar_t* s, bool trim 
   }
   sb += L'\0';
   sb += L'\1';
-  wchar_t* ostr = scopy((wchar_t*)sb.c_str(), sb.size()+1);
+  wchar_t* ostr = scopy((wchar_t*)sb.c_str(), sb.size() + 1);
   return ostr;
 }
 wchar_t* str_split(const wchar_t* str, const wchar_t* s, bool trim = true) {
   return str_split(str, wcslen(str), s, trim);
 }
 
-
 char* shift_word(char* separeted) {
   if (separeted == nullptr) return nullptr;
   char* begin = separeted;
-  while (*begin != '\0') { ++begin; }
+  while (*begin != '\0') {
+    ++begin;
+  }
   ++begin;
-  return *begin == '\1' ? nullptr: begin;
+  return *begin == '\1' ? nullptr : begin;
 }
 
 wchar_t* shift_word(wchar_t* separeted) {
   if (separeted == nullptr) return nullptr;
   wchar_t* begin = separeted;
-  while (*begin != L'\0') { ++begin; }
+  while (*begin != L'\0') {
+    ++begin;
+  }
   ++begin;
-  return *begin == L'\1' ? nullptr: begin;
+  return *begin == L'\1' ? nullptr : begin;
 }
-
 
 char* str_to_str(const char* separeted) {
   if (separeted[0] != '\"') {
     return nullptr;
   }
-  char* begin = scopy(separeted+1);
+  char* begin = scopy(separeted + 1);
   for (int i = 0; i < strlen(begin); ++i) {
-    if (begin[i] == '\\' && begin[i+1] == '\"') {
+    if (begin[i] == '\\' && begin[i + 1] == '\"') {
       begin[i] = '\"';
-      memmove(begin+i+1, begin+i+2, strlen(begin+i+1));
+      memmove(begin + i + 1, begin + i + 2, strlen(begin + i + 1));
     }
-    if (begin[i] == '\\' && begin[i+1] == 'n') {
+    if (begin[i] == '\\' && begin[i + 1] == 'n') {
       begin[i] = '\n';
-      memmove(begin+i+1, begin+i+2, strlen(begin+i+1));
+      memmove(begin + i + 1, begin + i + 2, strlen(begin + i + 1));
     }
-    if (begin[i] == '\\' && begin[i+1] == 't') {
+    if (begin[i] == '\\' && begin[i + 1] == 't') {
       begin[i] = '\t';
-      memmove(begin+i+1, begin+i+2, strlen(begin+i+1));
+      memmove(begin + i + 1, begin + i + 2, strlen(begin + i + 1));
     }
   }
-  if (begin[strlen(begin)-1] == '\"') {
-    begin[strlen(begin)-1] = '\0';
+  if (begin[strlen(begin) - 1] == '\"') {
+    begin[strlen(begin) - 1] = '\0';
   } else {
     begin[strlen(begin)] = '\0';
   }
   return begin;
 }
-
 
 int hex_to_int(const char* str, bool& success) {
   char* end;
@@ -733,7 +755,7 @@ int hex_to_int(const char* str, bool& success) {
 
 int str_to_int(const char* str, bool& success) {
   if (mew::starts_with(str, "0x")) {
-    return hex_to_int(str+2, success);
+    return hex_to_int(str + 2, success);
   }
   char* end;
   long result = strtol(str, &end, 10);
@@ -775,7 +797,7 @@ NumberVariant str_to_number(const char* str) {
   bool success;
   if (str == nullptr || *str == '\0') {
     success = false;
-    return 0; // Default value for int
+    return 0;  // Default value for int
   }
 
   if (strcmp(str, "true") == 0 || strcmp(str, "false") == 0) {
@@ -802,62 +824,65 @@ NumberVariant str_to_number(const char* str) {
   }
 
   success = false;
-  return 0; // Default value for int
+  return 0;  // Default value for int
 }
 
 const char* number_to_strv(NumberVariant number) {
   char* out_v = nullptr;
-  
+
   std::visit(overloaded{
-    [&out_v](int& i){
-      out_v = new char[sizeof(i)];
-      memcpy(out_v, &i, sizeof(i));
-    },
-    [&out_v](float& i){
-      out_v = new char[sizeof(i)];
-      memcpy(out_v, &i, sizeof(i));
-    },
-    [&out_v](double& i){
-      out_v = new char[sizeof(i)];
-      memcpy(out_v, &i, sizeof(i));
-    },
-    [&out_v](bool& i){
-      out_v = new char[sizeof(i)];
-      memcpy(out_v, &i, sizeof(i));
-    }
-  }, number);
+                 [&out_v](int& i) {
+                   out_v = new char[sizeof(i)];
+                   memcpy(out_v, &i, sizeof(i));
+                 },
+                 [&out_v](float& i) {
+                   out_v = new char[sizeof(i)];
+                   memcpy(out_v, &i, sizeof(i));
+                 },
+                 [&out_v](double& i) {
+                   out_v = new char[sizeof(i)];
+                   memcpy(out_v, &i, sizeof(i));
+                 },
+                 [&out_v](bool& i) {
+                   out_v = new char[sizeof(i)];
+                   memcpy(out_v, &i, sizeof(i));
+                 }},
+             number);
   return out_v;
 }
 
 int number_to_tk(NumberVariant number) {
-  enum __n {Int, Float, Double, Bool};
+  enum __n { Int,
+             Float,
+             Double,
+             Bool };
   __n n;
   std::visit(overloaded{
-    [&n](int& i){
-      n = __n::Int;
-    },
-    [&n](float& i){
-      n = __n::Float;
-    },
-    [&n](double& i){
-      n = __n::Double;
-    },
-    [&n](bool& i){
-      n = __n::Bool;
-    }
-  }, number);
+                 [&n](int& i) {
+                   n = __n::Int;
+                 },
+                 [&n](float& i) {
+                   n = __n::Float;
+                 },
+                 [&n](double& i) {
+                   n = __n::Double;
+                 },
+                 [&n](bool& i) {
+                   n = __n::Bool;
+                 }},
+             number);
   return (int)n;
 }
 
-
 class TokenRow {
-private:
+ private:
   std::shared_ptr<char[]> m_sequence;
   char* c_ptr;
-public: 
+
+ public:
   TokenRow() {}
-  TokenRow(const char* str): m_sequence(str_separate(str)),c_ptr(m_sequence.get()) {}
-  TokenRow(const TokenRow& tr): m_sequence(tr.m_sequence), c_ptr(tr.c_ptr) {}
+  TokenRow(const char* str) : m_sequence(str_separate(str)), c_ptr(m_sequence.get()) {}
+  TokenRow(const TokenRow& tr) : m_sequence(tr.m_sequence), c_ptr(tr.c_ptr) {}
 
   void config(const char* str) {
     m_sequence.reset(str_separate(str));
@@ -867,7 +892,7 @@ public:
   void print() {
     TokenRow tmp(*this);
     char* w = *tmp;
-    while((w = *tmp++) != nullptr) {
+    while ((w = *tmp++) != nullptr) {
       printf("\"%s\" ", w);
     }
   }
@@ -907,19 +932,215 @@ public:
   }
 };
 
-	const char* str_concat(const char* a, const char* sep, const char* b) {
-		auto buf = new char[strlen(a) + strlen(sep) + strlen(b) + 1];
-		strcpy(buf, a);
-		strcat(buf, sep);
-		strcat(buf, b);
-		return buf;
-	}
-} // ::mew::string
+const char* str_concat(const char* a, const char* sep, const char* b) {
+  auto buf = new char[strlen(a) + strlen(sep) + strlen(b) + 1];
+  strcpy(buf, a);
+  strcat(buf, sep);
+  strcat(buf, b);
+  return buf;
+}
+}  // namespace string
 
-class variant {
-	
+class cstr {
+ private:
+  char* content;
+  u64 length;
+
+ public:
+  cstr() {}
+  cstr(const char* content)
+      : content((char*)rcopy((void*)content, strlen(content))), length(strlen(content)) {}
+  cstr(const char* content, u64 length)
+      : content((char*)rcopy((void*)content, length)), length(length) {}
+
+  cstr(cstr& s) : content(s.content), length(s.length) {
+    s.content = nullptr;
+    s.length = 0;
+  }
+
+  ~cstr() {
+    delete[] content;
+  }
+
+  const char* c_str() {
+    return scopy(content, length);
+  }
+
+  char* data() {
+    return content;
+  }
+
+  u64 size() {
+    return length;
+  }
 };
 
-} // ::mew
+const char* FormatString(const char* fmt, ...) {
+	va_list args;
+	va_start(args, fmt);
+	size_t size = vsnprintf(nullptr, 0, fmt, args) + 1;  // Extra space for '\0'
+	va_end(args);
+	
+	std::unique_ptr<char[]> buf(new char[size]);
+	va_start(args, fmt);
+	vsnprintf(buf.get(), size, fmt, args);
+	va_end(args);
+	
+	return scopy(buf.get());
+}
+
+class str {
+ private:
+  mew::stack<char> content;
+
+ public:
+  str() {}
+
+  str(str& s) : content(s.content) {}
+
+  str(const char* str) {
+    content.push_array((char*)str, strlen(str));
+  }
+
+  str(char c, u64 count = 1) {
+    for (u64 i = 0; i < count; ++i) {
+      content.push(c);
+    }
+  }
+
+  const char* c_str() {
+    return scopy(content.data(), content.count());
+  }
+
+  char* data() {
+    return content.data();
+  }
+
+  u64 size() {
+    return content.count();
+  }
+
+  str& append(char c) {
+    content.push(c);
+    return *this;
+  }
+
+  str& append(const char* c) {
+    content.push_array((char*)c, strlen(c));
+    return *this;
+  }
+
+  str& insert(char c, u64 pos) {
+    content.insert(c, pos);
+    return *this;
+  }
+
+  str& concat(str& a) {
+    content.push_array(a.content.data(), a.content.count());
+    return *this;
+  }
+
+  str& operator+=(str& a) {
+    content.push_array(a.content.data(), a.content.count());
+    return *this;
+  }
+  str& operator+=(char c) {
+    content.push(c);
+    return *this;
+  }
+
+  friend str operator+(str& l, str& r) {
+    str s(l);
+    s += r;
+    return s;
+  }
+  friend str operator+(str& l, char r) {
+    str s(l);
+    s += r;
+    return s;
+  }
+  friend str operator+(str& l, const char* r) {
+    str s(l);
+    s += r;
+    return s;
+  }
+
+  str& operator+=(const char* c) {
+    content.push_array((char*)c, strlen(c));
+    return *this;
+  }
+
+  const char* complete() {
+    const char* e = c_str();
+    content.clear();
+    return e;
+  }
+
+  str copy() {
+    str s(*this);
+    return s;
+  }
+
+  u64 indexOf(char c) {
+    for (u64 i = 0; i < content.count(); ++i) {
+      if (content[i] == c) return i;
+    }
+    return -1;
+  }
+
+  u64 indexOf(const char* fmt) {
+    u64 fmt_len = strlen(fmt);
+    if (fmt_len == 0) return 0;
+
+    u64 content_len = content.count();
+    if (fmt_len > content_len) return (u64)-1;
+
+    u64 pos = 0;
+    while (pos <= content_len - fmt_len) {
+      if (content[pos] == fmt[0]) {
+        u64 j = 1;
+        while (fmt_len && content[pos + j] == fmt[j]) {
+          ++j;
+        }
+        if (j == fmt_len) return pos;
+      }
+      ++pos;
+    }
+    return (u64)-1;
+  }
+
+  str& replace(const char* fmt, char* replacer) {
+    if (!fmt || !replacer) return *this;
+
+    u64 fmt_len = strlen(fmt);
+    u64 replacer_len = strlen(replacer);
+    if (fmt_len == 0) return *this;
+
+    u64 pos = indexOf(fmt);
+    while (pos != (u64)-1) {
+      for (u64 i = 0; i < fmt_len; ++i) {
+        content.erase(pos);
+      }
+      for (u64 i = 0; i < replacer_len; ++i) {
+        content.insert(replacer[i], pos + i);
+      }
+      pos = indexOf(fmt);
+    }
+    return *this;
+  }
+	
+	friend bool operator==(str& l, str& r) {
+		return l.size() == r.size() && mew::strcmp(l.data(), r.data());
+	}
+
+};
+
+
+
+
+class variant {
+};
+
+}  // namespace mew
 
 #endif
